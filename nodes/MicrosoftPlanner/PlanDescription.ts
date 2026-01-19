@@ -16,6 +16,18 @@ export const planOperations: INodeProperties[] = [
 		},
 		options: [
 			{
+				name: 'Count Buckets',
+				value: 'countBuckets',
+				description: 'Count buckets in a plan',
+				action: 'Count buckets',
+			},
+			{
+				name: 'Count Tasks',
+				value: 'countTasks',
+				description: 'Count tasks in a plan',
+				action: 'Count tasks',
+			},
+			{
 				name: 'Create',
 				value: 'create',
 				description: 'Create a new plan',
@@ -28,16 +40,16 @@ export const planOperations: INodeProperties[] = [
 				action: 'Get a plan',
 			},
 			{
+				name: 'Get Details',
+				value: 'getDetails',
+				description: 'Get plan details (labels, metadata)',
+				action: 'Get plan details',
+			},
+			{
 				name: 'Get Many',
 				value: 'getAll',
 				description: 'Get many plans',
 				action: 'Get many plans',
-			},
-			{
-				name: "Get Details",
-				value: 'getDetails',
-				description: 'Get plan details (labels, metadata)',
-				action: 'Get plan details',
 			},
 			{
 				name: 'Update',
@@ -50,18 +62,6 @@ export const planOperations: INodeProperties[] = [
 				value: 'updateDetails',
 				description: 'Update plan details (raw JSON)',
 				action: 'Update plan details',
-			},
-			{
-				name: 'Count Buckets',
-				value: 'countBuckets',
-				description: 'Count buckets in a plan',
-				action: 'Count buckets',
-			},
-			{
-				name: 'Count Tasks',
-				value: 'countTasks',
-				description: 'Count tasks in a plan',
-				action: 'Count tasks',
 			},
 		],
 		default: 'getAll',
@@ -153,9 +153,8 @@ export const planFields: INodeProperties[] = [
 		},
 		typeOptions: {
 			minValue: 1,
-			maxValue: 500,
 		},
-		default: 100,
+		default: 50,
 		description: 'Max number of results to return',
 	},
 

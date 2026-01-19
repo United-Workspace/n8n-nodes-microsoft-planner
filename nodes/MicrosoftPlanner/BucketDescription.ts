@@ -16,6 +16,12 @@ export const bucketOperations: INodeProperties[] = [
 		},
 		options: [
 			{
+				name: 'Count Tasks',
+				value: 'countTasks',
+				description: 'Count tasks in a bucket',
+				action: 'Count tasks in bucket',
+			},
+			{
 				name: 'Create',
 				value: 'create',
 				description: 'Create a new bucket in a plan',
@@ -38,12 +44,6 @@ export const bucketOperations: INodeProperties[] = [
 				value: 'update',
 				description: 'Update a bucket',
 				action: 'Update a bucket',
-			},
-			{
-				name: 'Count Tasks',
-				value: 'countTasks',
-				description: 'Count tasks in a bucket',
-				action: 'Count tasks in bucket',
 			},
 		],
 		default: 'getAll',
@@ -89,23 +89,22 @@ export const bucketFields: INodeProperties[] = [
 		description: 'Whether to return all results or only up to a given limit',
 	},
 	{
-		displayName: 'Limit',
-		name: 'limit',
-		type: 'number',
-		displayOptions: {
-			show: {
-				resource: ['bucket'],
-				operation: ['getAll'],
-				returnAll: [false],
+			displayName: 'Limit',
+			name: 'limit',
+			type: 'number',
+			displayOptions: {
+				show: {
+					resource: ['bucket'],
+					operation: ['getAll'],
+					returnAll: [false],
+				},
 			},
+			typeOptions: {
+				minValue: 1,
+			},
+			default: 50,
+			description: 'Max number of results to return',
 		},
-		typeOptions: {
-			minValue: 1,
-			maxValue: 500,
-		},
-		default: 100,
-		description: 'Max number of results to return',
-	},
 	{
 		displayName: 'Name',
 		name: 'name',
