@@ -1,5 +1,8 @@
 import { INodeProperties } from 'n8n-workflow';
 
+// ----------------------------------
+//         Task operations
+// ----------------------------------
 export const taskOperations: INodeProperties[] = [
 	{
 		displayName: 'Operation',
@@ -53,6 +56,9 @@ export const taskOperations: INodeProperties[] = [
 	},
 ];
 
+// ----------------------------------
+//         Task fields
+// ----------------------------------
 export const taskFields: INodeProperties[] = [
 	// ----------------------------------
 	//         task:create
