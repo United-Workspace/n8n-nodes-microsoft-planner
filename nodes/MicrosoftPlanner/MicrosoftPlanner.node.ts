@@ -11,6 +11,7 @@ import {
 import {
 	cleanETag,
 	createAssignmentsObject,
+	encodeReferenceKey,
 	formatDateTime,
 	getUserIdByEmail,
 	microsoftApiRequest,
@@ -229,8 +230,8 @@ export class MicrosoftPlanner implements INodeType {
 							body,
 						);
 
-						// Add description if provided
-						if (additionalFields.description) {
+						// Add description or references if provided
+						if (additionalFields.description || additionalFields.references) {
 							const details = await microsoftApiRequest.call(
 								this,
 								'GET',
@@ -238,22 +239,43 @@ export class MicrosoftPlanner implements INodeType {
 							);
 
 							const eTag = cleanETag(details['@odata.etag']);
+							const detailsBody: IDataObject = {};
+
+							if (additionalFields.description) {
+								detailsBody.description = additionalFields.description;
+								responseData.description = additionalFields.description;
+							}
+
+							if (additionalFields.references) {
+								const references = additionalFields.references as IDataObject;
+								const referenceList = references.reference as IDataObject[];
+								const referencesBody: IDataObject = {};
+								for (const reference of referenceList) {
+									const url = reference.url as string;
+									const alias = reference.alias as string;
+									const type = reference.type as string;
+									// Use helper to encode URL and handle special characters like dots
+									const encodedUrl = encodeReferenceKey(url);
+									referencesBody[encodedUrl] = {
+										'@odata.type': '#microsoft.graph.plannerExternalReference',
+										alias,
+										type,
+									};
+								}
+								detailsBody.references = referencesBody;
+							}
 
 							await microsoftApiRequest.call(
 								this,
 								'PATCH',
 								`/planner/tasks/${responseData.id}/details`,
-								{
-									description: additionalFields.description,
-								},
+								detailsBody,
 								{},
 								undefined,
 								{
 									'If-Match': eTag,
 								},
 							);
-
-							responseData.description = additionalFields.description;
 						}
 
 						returnData.push(responseData);
@@ -292,9 +314,9 @@ export class MicrosoftPlanner implements INodeType {
 					if (operation === 'getAll') {
 						const filterBy = this.getNodeParameter('filterBy', i) as string;
 						const planId = this.getNodeParameter('planId', i) as string;
-					
+
 						let endpoint = '';
-					
+
 						if (filterBy === 'plan') {
 							endpoint = `/planner/plans/${planId}/tasks`;
 						} else if (filterBy === 'bucket') {
@@ -310,7 +332,7 @@ export class MicrosoftPlanner implements INodeType {
 								{ itemIndex: i },
 							);
 						}
-					
+
 						const responseData = await microsoftApiRequestAllItems.call(
 							this,
 							'value',
@@ -401,8 +423,8 @@ export class MicrosoftPlanner implements INodeType {
 							);
 						}
 
-						// Update description if provided
-						if (updateFields.description) {
+						// Update description or references if provided
+						if (updateFields.description || updateFields.references) {
 							const details = await microsoftApiRequest.call(
 								this,
 								'GET',
@@ -410,14 +432,36 @@ export class MicrosoftPlanner implements INodeType {
 							);
 
 							const detailsETag = cleanETag(details['@odata.etag']);
+							const detailsBody: IDataObject = {};
+
+							if (updateFields.description) {
+								detailsBody.description = updateFields.description;
+							}
+
+							if (updateFields.references) {
+								const references = updateFields.references as IDataObject;
+								const referenceList = references.reference as IDataObject[];
+								const referencesBody: IDataObject = {};
+								for (const reference of referenceList) {
+									const url = reference.url as string;
+									const alias = reference.alias as string;
+									const type = reference.type as string;
+									// Use helper to encode URL and handle special characters like dots
+									const encodedUrl = encodeReferenceKey(url);
+									referencesBody[encodedUrl] = {
+										'@odata.type': '#microsoft.graph.plannerExternalReference',
+										alias,
+										type,
+									};
+								}
+								detailsBody.references = referencesBody;
+							}
 
 							await microsoftApiRequest.call(
 								this,
 								'PATCH',
 								`/planner/tasks/${taskId}/details`,
-								{
-									description: updateFields.description,
-								},
+								detailsBody,
 								{},
 								undefined,
 								{
@@ -432,9 +476,9 @@ export class MicrosoftPlanner implements INodeType {
 							'GET',
 							`/planner/tasks/${taskId}`,
 						);
-					
+
 						// If description (task details) was updated, also return latest details
-						if (Object.prototype.hasOwnProperty.call(updateFields, 'description')) {
+						if (Object.prototype.hasOwnProperty.call(updateFields, 'description') || Object.prototype.hasOwnProperty.call(updateFields, 'references')) {
 							const details = await microsoftApiRequest.call(
 								this,
 								'GET',
@@ -442,7 +486,7 @@ export class MicrosoftPlanner implements INodeType {
 							);
 							(responseData as IDataObject).details = details;
 						}
-					
+
 						returnData.push(responseData);
 					}
 
@@ -558,7 +602,7 @@ export class MicrosoftPlanner implements INodeType {
 					if (operation === 'getAll') {
 						const scope = this.getNodeParameter('scope', i) as string;
 						let endpoint = '';
-					
+
 						if (scope === 'my') {
 							// List plans for the current user
 							endpoint = '/me/planner/plans';
@@ -571,7 +615,7 @@ export class MicrosoftPlanner implements INodeType {
 								itemIndex: i,
 							});
 						}
-					
+
 						const responseData = await microsoftApiRequestAllItems.call(
 							this,
 							'value',
@@ -585,7 +629,7 @@ export class MicrosoftPlanner implements INodeType {
 					if (operation === 'update') {
 						const planId = this.getNodeParameter('planId', i) as string;
 						const updateFields = this.getNodeParameter('updateFields', i) as IDataObject;
-					
+
 						// Get current plan to obtain ETag
 						const currentPlan = await microsoftApiRequest.call(
 							this,
@@ -593,12 +637,12 @@ export class MicrosoftPlanner implements INodeType {
 							`/planner/plans/${planId}`,
 						);
 						const eTag = cleanETag(currentPlan['@odata.etag']);
-					
+
 						const body: IDataObject = {};
 						if (updateFields.title) {
 							body.title = updateFields.title;
 						}
-					
+
 						if (Object.keys(body).length > 0) {
 							await microsoftApiRequest.call(
 								this,
@@ -612,7 +656,7 @@ export class MicrosoftPlanner implements INodeType {
 								},
 							);
 						}
-					
+
 						// Optionally update plan details if provided
 						const detailsBody: IDataObject = {};
 						if (updateFields.categoryDescriptions) {
@@ -631,7 +675,7 @@ export class MicrosoftPlanner implements INodeType {
 								detailsBody.categoryDescriptions = cleanedCategories;
 							}
 						}
-					
+
 						if (updateFields.sharedWithJson) {
 							let sharedWithParsed: IDataObject;
 							try {
@@ -645,7 +689,7 @@ export class MicrosoftPlanner implements INodeType {
 								detailsBody.sharedWith = sharedWithParsed;
 							}
 						}
-					
+
 						if (Object.keys(detailsBody).length > 0) {
 							const currentDetails = await microsoftApiRequest.call(
 								this,
@@ -653,7 +697,7 @@ export class MicrosoftPlanner implements INodeType {
 								`/planner/plans/${planId}/details`,
 							);
 							const detailsETag = cleanETag(currentDetails['@odata.etag']);
-					
+
 							await microsoftApiRequest.call(
 								this,
 								'PATCH',
@@ -666,13 +710,13 @@ export class MicrosoftPlanner implements INodeType {
 								},
 							);
 						}
-					
+
 						const responseData = await microsoftApiRequest.call(
 							this,
 							'GET',
 							`/planner/plans/${planId}`,
 						);
-					
+
 						// If plan details were updated, also include latest details in the response
 						if (Object.keys(detailsBody).length > 0) {
 							const details = await microsoftApiRequest.call(
@@ -682,7 +726,7 @@ export class MicrosoftPlanner implements INodeType {
 							);
 							(responseData as IDataObject).details = details;
 						}
-					
+
 						returnData.push(responseData);
 					}
 
@@ -755,7 +799,7 @@ export class MicrosoftPlanner implements INodeType {
 					if (operation === 'getAll') {
 						const planId = this.getNodeParameter('planId', i) as string;
 						const endpoint = `/planner/plans/${planId}/buckets`;
-					
+
 						const responseData = await microsoftApiRequestAllItems.call(
 							this,
 							'value',
@@ -769,14 +813,14 @@ export class MicrosoftPlanner implements INodeType {
 					if (operation === 'update') {
 						const bucketId = this.getNodeParameter('bucketId', i) as string;
 						const updateFields = this.getNodeParameter('updateFields', i) as IDataObject;
-					
+
 						const currentBucket = await microsoftApiRequest.call(
 							this,
 							'GET',
 							`/planner/buckets/${bucketId}`,
 						);
 						const eTag = cleanETag(currentBucket['@odata.etag']);
-					
+
 						const body: IDataObject = {};
 						if (updateFields.name) {
 							body.name = updateFields.name;
@@ -784,7 +828,7 @@ export class MicrosoftPlanner implements INodeType {
 						if (updateFields.orderHint) {
 							body.orderHint = updateFields.orderHint;
 						}
-					
+
 						if (Object.keys(body).length > 0) {
 							await microsoftApiRequest.call(
 								this,
@@ -798,27 +842,27 @@ export class MicrosoftPlanner implements INodeType {
 								},
 							);
 						}
-					
+
 						const responseData = await microsoftApiRequest.call(
 							this,
 							'GET',
 							`/planner/buckets/${bucketId}`,
 						);
-					
+
 						returnData.push(responseData);
 					}
 
 					// bucket:delete -> DELETE /planner/buckets/{bucketId} with ETag
 					if (operation === 'delete') {
 						const bucketId = this.getNodeParameter('bucketId', i) as string;
-					
+
 						const currentBucket = await microsoftApiRequest.call(
 							this,
 							'GET',
 							`/planner/buckets/${bucketId}`,
 						);
 						const eTag = cleanETag(currentBucket['@odata.etag']);
-					
+
 						await microsoftApiRequest.call(
 							this,
 							'DELETE',
@@ -830,7 +874,7 @@ export class MicrosoftPlanner implements INodeType {
 								'If-Match': eTag,
 							},
 						);
-					
+
 						returnData.push({ success: true, bucketId });
 					}
 				}

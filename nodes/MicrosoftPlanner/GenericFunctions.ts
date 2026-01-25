@@ -129,3 +129,24 @@ export function createAssignmentsObject(userIds: string[]): IDataObject {
 	}
 	return assignments;
 }
+
+/**
+ * Encodes a URL for use as a key in plannerExternalReferences.
+ * OData requires keys in open types to be free of certain special characters like '.',
+ * which must be encoded.
+ */
+export function encodeReferenceKey(url: string): string {
+	// Use encodeURI to handle spaces and % but preserve URI structure (/, ?, &, =)
+	let encoded = encodeURI(url);
+
+	// Manually replace OData forbidden characters that encodeURI preserves
+	// Forbidden: . : % @ #
+	// encodeURI handles % (encodes to %25 unless it's a valid escape sequence)
+	encoded = encoded
+		.replace(/\./g, '%2E')
+		.replace(/:/g, '%3A')
+		.replace(/@/g, '%40')
+		.replace(/#/g, '%23');
+
+	return encoded;
+}

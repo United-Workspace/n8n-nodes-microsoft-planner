@@ -200,6 +200,64 @@ export const taskFields: INodeProperties[] = [
 				default: '',
 				description: 'Start date and time for the task',
 			},
+			{
+				displayName: 'Attachments',
+				name: 'references',
+				type: 'fixedCollection',
+				default: {},
+				placeholder: 'Add Attachment',
+				typeOptions: {
+					multipleValues: true,
+				},
+				options: [
+					{
+						name: 'reference',
+						displayName: 'Attachment',
+						values: [
+							{
+								displayName: 'URL',
+								name: 'url',
+								type: 'string',
+								default: '',
+								required: true,
+								description: 'The URL of the attachment',
+							},
+							{
+								displayName: 'Alias',
+								name: 'alias',
+								type: 'string',
+								default: '',
+								description: 'A friendly name for the attachment',
+							},
+							{
+								displayName: 'Type',
+								name: 'type',
+								type: 'options',
+								options: [
+									{
+										name: 'Excel',
+										value: 'Excel',
+									},
+									{
+										name: 'Other',
+										value: 'Other',
+									},
+									{
+										name: 'PowerPoint',
+										value: 'PowerPoint',
+									},
+									{
+										name: 'Word',
+										value: 'Word',
+									},
+								],
+								default: 'Other',
+							},
+						],
+					},
+				],
+				description: 'Add attachments to the task',
+			},
 		],
 	},
 
@@ -419,6 +477,64 @@ export const taskFields: INodeProperties[] = [
 				type: 'string',
 				default: '',
 				description: 'Title of the task',
+			},
+			{
+				displayName: 'Attachments',
+				name: 'references',
+				type: 'fixedCollection',
+				default: {},
+				placeholder: 'Add Attachment',
+				typeOptions: {
+					multipleValues: true,
+				},
+				options: [
+					{
+						name: 'reference',
+						displayName: 'Attachment',
+						values: [
+							{
+								displayName: 'URL',
+								name: 'url',
+								type: 'string',
+								default: '',
+								required: true,
+								description: 'The URL of the attachment',
+							},
+							{
+								displayName: 'Alias',
+								name: 'alias',
+								type: 'string',
+								default: '',
+								description: 'A friendly name for the attachment',
+							},
+							{
+								displayName: 'Type',
+								name: 'type',
+								type: 'options',
+								options: [
+									{
+										name: 'Excel',
+										value: 'Excel',
+									},
+									{
+										name: 'Other',
+										value: 'Other',
+									},
+									{
+										name: 'PowerPoint',
+										value: 'PowerPoint',
+									},
+									{
+										name: 'Word',
+										value: 'Word',
+									},
+								],
+								default: 'Other',
+							},
+						],
+					},
+				],
+				description: 'Add attachments to the task',
 			},
 		],
 	},
