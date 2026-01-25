@@ -288,13 +288,13 @@ export class MicrosoftPlanner implements INodeType {
 					// ----------------------------------
 					//         task:getAll
 					// ----------------------------------
+					// Always return all tasks for the given scope; Graph does not honor $top/$limit
 					if (operation === 'getAll') {
-						const returnAll = this.getNodeParameter('returnAll', i);
 						const filterBy = this.getNodeParameter('filterBy', i) as string;
 						const planId = this.getNodeParameter('planId', i) as string;
-
+					
 						let endpoint = '';
-
+					
 						if (filterBy === 'plan') {
 							endpoint = `/planner/plans/${planId}/tasks`;
 						} else if (filterBy === 'bucket') {
@@ -310,22 +310,14 @@ export class MicrosoftPlanner implements INodeType {
 								{ itemIndex: i },
 							);
 						}
-
-						if (returnAll) {
-							const responseData = await microsoftApiRequestAllItems.call(
-								this,
-								'value',
-								'GET',
-								endpoint,
-							);
-							returnData.push(...responseData);
-						} else {
-							const limit = this.getNodeParameter('limit', i);
-							const responseData = await microsoftApiRequest.call(this, 'GET', endpoint, {}, {
-								$top: limit,
-							});
-							returnData.push(...(responseData.value as IDataObject[]));
-						}
+					
+						const responseData = await microsoftApiRequestAllItems.call(
+							this,
+							'value',
+							'GET',
+							endpoint,
+						);
+						returnData.push(...responseData);
 					}
 
 					// ----------------------------------
@@ -440,7 +432,17 @@ export class MicrosoftPlanner implements INodeType {
 							'GET',
 							`/planner/tasks/${taskId}`,
 						);
-
+					
+						// If description (task details) was updated, also return latest details
+						if (Object.prototype.hasOwnProperty.call(updateFields, 'description')) {
+							const details = await microsoftApiRequest.call(
+								this,
+								'GET',
+								`/planner/tasks/${taskId}/details`,
+							);
+							(responseData as IDataObject).details = details;
+						}
+					
 						returnData.push(responseData);
 					}
 
@@ -531,6 +533,7 @@ export class MicrosoftPlanner implements INodeType {
 					// plan:get -> GET /planner/plans/{planId}
 					if (operation === 'get') {
 						const planId = this.getNodeParameter('planId', i) as string;
+						const additionalFields = this.getNodeParameter('additionalFields', i, {}) as IDataObject;
 
 						const responseData = await microsoftApiRequest.call(
 							this,
@@ -538,48 +541,51 @@ export class MicrosoftPlanner implements INodeType {
 							`/planner/plans/${planId}`,
 						);
 
-						returnData.push(responseData);
-					}
-
-					// plan:getAll -> GET /planner/plans
-					if (operation === 'getAll') {
-						const returnAll = this.getNodeParameter('returnAll', i) as boolean;
-
-						if (returnAll) {
-							const responseData = await microsoftApiRequestAllItems.call(
+						if (additionalFields.includeDetails) {
+							const details = await microsoftApiRequest.call(
 								this,
-								'value',
 								'GET',
-								'/planner/plans',
+								`/planner/plans/${planId}/details`,
 							);
-							returnData.push(...responseData);
-						} else {
-							const limit = this.getNodeParameter('limit', i) as number;
-							const responseData = await microsoftApiRequest.call(this, 'GET', '/planner/plans', {}, {
-								$top: limit,
-							});
-							returnData.push(...(responseData.value as IDataObject[]));
+							(responseData as IDataObject).details = details;
 						}
-					}
-
-					// plan:getDetails -> GET /planner/plans/{planId}/details
-					if (operation === 'getDetails') {
-						const planId = this.getNodeParameter('planId', i) as string;
-
-						const responseData = await microsoftApiRequest.call(
-							this,
-							'GET',
-							`/planner/plans/${planId}/details`,
-						);
 
 						returnData.push(responseData);
 					}
 
-					// plan:update -> PATCH /planner/plans/{planId} with ETag
+					// plan:getAll -> list plans scoped to current user or a specific group
+					// Always return all plans; Graph does not honor $top/$limit for Planner.
+					if (operation === 'getAll') {
+						const scope = this.getNodeParameter('scope', i) as string;
+						let endpoint = '';
+					
+						if (scope === 'my') {
+							// List plans for the current user
+							endpoint = '/me/planner/plans';
+						} else if (scope === 'group') {
+							// List plans owned by a specific Microsoft 365 group
+							const groupId = this.getNodeParameter('groupId', i) as string;
+							endpoint = `/groups/${groupId}/planner/plans`;
+						} else {
+							throw new NodeOperationError(this.getNode(), 'Invalid scope for plan getAll operation', {
+								itemIndex: i,
+							});
+						}
+					
+						const responseData = await microsoftApiRequestAllItems.call(
+							this,
+							'value',
+							'GET',
+							endpoint,
+						);
+						returnData.push(...responseData);
+					}
+
+					// plan:update -> PATCH /planner/plans/{planId} with ETag, and optionally /details
 					if (operation === 'update') {
 						const planId = this.getNodeParameter('planId', i) as string;
 						const updateFields = this.getNodeParameter('updateFields', i) as IDataObject;
-
+					
 						// Get current plan to obtain ETag
 						const currentPlan = await microsoftApiRequest.call(
 							this,
@@ -587,12 +593,12 @@ export class MicrosoftPlanner implements INodeType {
 							`/planner/plans/${planId}`,
 						);
 						const eTag = cleanETag(currentPlan['@odata.etag']);
-
+					
 						const body: IDataObject = {};
 						if (updateFields.title) {
 							body.title = updateFields.title;
 						}
-
+					
 						if (Object.keys(body).length > 0) {
 							await microsoftApiRequest.call(
 								this,
@@ -606,13 +612,77 @@ export class MicrosoftPlanner implements INodeType {
 								},
 							);
 						}
-
+					
+						// Optionally update plan details if provided
+						const detailsBody: IDataObject = {};
+						if (updateFields.categoryDescriptions) {
+							const categories = updateFields.categoryDescriptions as IDataObject;
+							const cleanedCategories: IDataObject = {};
+							for (const key of Object.keys(categories)) {
+								const value = categories[key] as string | null | undefined;
+								// Empty string in the UI means "unset" → send null to Graph
+								if (value === '') {
+									cleanedCategories[key] = null;
+								} else if (value !== undefined) {
+									cleanedCategories[key] = value;
+								}
+							}
+							if (Object.keys(cleanedCategories).length > 0) {
+								detailsBody.categoryDescriptions = cleanedCategories;
+							}
+						}
+					
+						if (updateFields.sharedWithJson) {
+							let sharedWithParsed: IDataObject;
+							try {
+								sharedWithParsed = JSON.parse(updateFields.sharedWithJson as string) as IDataObject;
+							} catch (error) {
+								throw new NodeOperationError(this.getNode(), 'Invalid JSON in Shared With (plannerUserIds JSON) field', {
+									itemIndex: i,
+								});
+							}
+							if (Object.keys(sharedWithParsed).length > 0) {
+								detailsBody.sharedWith = sharedWithParsed;
+							}
+						}
+					
+						if (Object.keys(detailsBody).length > 0) {
+							const currentDetails = await microsoftApiRequest.call(
+								this,
+								'GET',
+								`/planner/plans/${planId}/details`,
+							);
+							const detailsETag = cleanETag(currentDetails['@odata.etag']);
+					
+							await microsoftApiRequest.call(
+								this,
+								'PATCH',
+								`/planner/plans/${planId}/details`,
+								detailsBody,
+								{},
+								undefined,
+								{
+									'If-Match': detailsETag,
+								},
+							);
+						}
+					
 						const responseData = await microsoftApiRequest.call(
 							this,
 							'GET',
 							`/planner/plans/${planId}`,
 						);
-
+					
+						// If plan details were updated, also include latest details in the response
+						if (Object.keys(detailsBody).length > 0) {
+							const details = await microsoftApiRequest.call(
+								this,
+								'GET',
+								`/planner/plans/${planId}/details`,
+							);
+							(responseData as IDataObject).details = details;
+						}
+					
 						returnData.push(responseData);
 					}
 
@@ -641,81 +711,13 @@ export class MicrosoftPlanner implements INodeType {
 
 						returnData.push({ success: true, planId });
 					}
-
-					// plan:countBuckets -> GET /planner/plans/{planId}/buckets/$count
-					if (operation === 'countBuckets') {
-						const planId = this.getNodeParameter('planId', i) as string;
-
-						const responseData = await microsoftApiRequest.call(
-							this,
-							'GET',
-							`/planner/plans/${planId}/buckets/$count`,
-						);
-
-						returnData.push({ planId, count: responseData });
-					}
-
-					// plan:countTasks -> GET /planner/plans/{planId}/tasks/$count
-					if (operation === 'countTasks') {
-						const planId = this.getNodeParameter('planId', i) as string;
-
-						const responseData = await microsoftApiRequest.call(
-							this,
-							'GET',
-							`/planner/plans/${planId}/tasks/$count`,
-						);
-
-						returnData.push({ planId, count: responseData });
-					}
-
-					// plan:updateDetails -> PATCH /planner/plans/{planId}/details with ETag
-					if (operation === 'updateDetails') {
-						const planId = this.getNodeParameter('planId', i) as string;
-						const detailsJson = this.getNodeParameter('detailsJson', i) as string;
-
-						let body: IDataObject;
-						try {
-							body = JSON.parse(detailsJson) as IDataObject;
-						} catch (error) {
-							throw new NodeOperationError(this.getNode(), 'Invalid JSON in Plan Details JSON field', {
-								itemIndex: i,
-							});
-						}
-
-						const currentDetails = await microsoftApiRequest.call(
-							this,
-							'GET',
-							`/planner/plans/${planId}/details`,
-						);
-						const eTag = cleanETag(currentDetails['@odata.etag']);
-
-						await microsoftApiRequest.call(
-							this,
-							'PATCH',
-							`/planner/plans/${planId}/details`,
-							body,
-							{},
-							undefined,
-							{
-								'If-Match': eTag,
-							},
-						);
-
-						const updatedDetails = await microsoftApiRequest.call(
-							this,
-							'GET',
-							`/planner/plans/${planId}/details`,
-						);
-
-						returnData.push(updatedDetails);
-					}
 				}
 
 				// ----------------------------------
 				//         bucket resource
 				// ----------------------------------
 				if (resource === 'bucket') {
-					// bucket:create -> POST /planner/plans/{planId}/buckets
+					// bucket:create -> POST /planner/buckets
 					if (operation === 'create') {
 						const planId = this.getNodeParameter('planId', i) as string;
 						const name = this.getNodeParameter('name', i) as string;
@@ -728,7 +730,7 @@ export class MicrosoftPlanner implements INodeType {
 						const responseData = await microsoftApiRequest.call(
 							this,
 							'POST',
-							`/planner/plans/${planId}/buckets`,
+							'/planner/buckets',
 							body,
 						);
 
@@ -749,41 +751,32 @@ export class MicrosoftPlanner implements INodeType {
 					}
 
 					// bucket:getAll -> GET /planner/plans/{planId}/buckets
+					// Always return all buckets for the plan; Graph does not honor $top/$limit for Planner.
 					if (operation === 'getAll') {
 						const planId = this.getNodeParameter('planId', i) as string;
-						const returnAll = this.getNodeParameter('returnAll', i, true) as boolean;
-
 						const endpoint = `/planner/plans/${planId}/buckets`;
-
-						if (returnAll) {
-							const responseData = await microsoftApiRequestAllItems.call(
-								this,
-								'value',
-								'GET',
-								endpoint,
-							);
-							returnData.push(...responseData);
-						} else {
-							const limit = this.getNodeParameter('limit', i, 100) as number;
-							const responseData = await microsoftApiRequest.call(this, 'GET', endpoint, {}, {
-								$top: limit,
-							});
-							returnData.push(...(responseData.value as IDataObject[]));
-						}
+					
+						const responseData = await microsoftApiRequestAllItems.call(
+							this,
+							'value',
+							'GET',
+							endpoint,
+						);
+						returnData.push(...responseData);
 					}
 
 					// bucket:update -> PATCH /planner/buckets/{bucketId} with ETag
 					if (operation === 'update') {
 						const bucketId = this.getNodeParameter('bucketId', i) as string;
 						const updateFields = this.getNodeParameter('updateFields', i) as IDataObject;
-
+					
 						const currentBucket = await microsoftApiRequest.call(
 							this,
 							'GET',
 							`/planner/buckets/${bucketId}`,
 						);
 						const eTag = cleanETag(currentBucket['@odata.etag']);
-
+					
 						const body: IDataObject = {};
 						if (updateFields.name) {
 							body.name = updateFields.name;
@@ -791,7 +784,7 @@ export class MicrosoftPlanner implements INodeType {
 						if (updateFields.orderHint) {
 							body.orderHint = updateFields.orderHint;
 						}
-
+					
 						if (Object.keys(body).length > 0) {
 							await microsoftApiRequest.call(
 								this,
@@ -805,27 +798,40 @@ export class MicrosoftPlanner implements INodeType {
 								},
 							);
 						}
-
+					
 						const responseData = await microsoftApiRequest.call(
 							this,
 							'GET',
 							`/planner/buckets/${bucketId}`,
 						);
-
+					
 						returnData.push(responseData);
 					}
 
-					// bucket:countTasks -> GET /planner/buckets/{bucketId}/tasks/$count
-					if (operation === 'countTasks') {
+					// bucket:delete -> DELETE /planner/buckets/{bucketId} with ETag
+					if (operation === 'delete') {
 						const bucketId = this.getNodeParameter('bucketId', i) as string;
-
-						const responseData = await microsoftApiRequest.call(
+					
+						const currentBucket = await microsoftApiRequest.call(
 							this,
 							'GET',
-							`/planner/buckets/${bucketId}/tasks/$count`,
+							`/planner/buckets/${bucketId}`,
 						);
-
-						returnData.push({ bucketId, count: responseData });
+						const eTag = cleanETag(currentBucket['@odata.etag']);
+					
+						await microsoftApiRequest.call(
+							this,
+							'DELETE',
+							`/planner/buckets/${bucketId}`,
+							{},
+							{},
+							undefined,
+							{
+								'If-Match': eTag,
+							},
+						);
+					
+						returnData.push({ success: true, bucketId });
 					}
 				}
 			} catch (error) {

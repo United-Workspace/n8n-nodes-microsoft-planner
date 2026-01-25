@@ -22,22 +22,10 @@ export const taskOperations: INodeProperties[] = [
 				action: 'Create a task',
 			},
 			{
-				name: 'Delete',
-				value: 'delete',
-				description: 'Delete a task',
-				action: 'Delete a task',
-			},
-			{
 				name: 'Get',
 				value: 'get',
 				description: 'Get a task',
 				action: 'Get a task',
-			},
-			{
-				name: 'Get Files',
-				value: 'getFiles',
-				description: 'Get files attached to a task',
-				action: 'Get files from a task',
 			},
 			{
 				name: 'Get Many',
@@ -50,6 +38,18 @@ export const taskOperations: INodeProperties[] = [
 				value: 'update',
 				description: 'Update a task',
 				action: 'Update a task',
+			},
+			{
+				name: 'Delete',
+				value: 'delete',
+				description: 'Delete a task',
+				action: 'Delete a task',
+			},
+			{
+				name: 'Get Files',
+				value: 'getFiles',
+				description: 'Get files attached to a task',
+				action: 'Get files from a task',
 			},
 		],
 		default: 'create',
@@ -254,36 +254,6 @@ export const taskFields: INodeProperties[] = [
 	// ----------------------------------
 	//         task:getAll
 	// ----------------------------------
-	{
-		displayName: 'Return All',
-		name: 'returnAll',
-		type: 'boolean',
-		displayOptions: {
-			show: {
-				resource: ['task'],
-				operation: ['getAll'],
-			},
-		},
-		default: false,
-		description: 'Whether to return all results or only up to a given limit',
-	},
-	{
-		displayName: 'Limit',
-		name: 'limit',
-		type: 'number',
-		displayOptions: {
-			show: {
-				resource: ['task'],
-				operation: ['getAll'],
-				returnAll: [false],
-			},
-		},
-		typeOptions: {
-			minValue: 1,
-		},
-		default: 50,
-		description: 'Max number of results to return',
-	},
 	{
 		displayName: 'Filter By',
 		name: 'filterBy',

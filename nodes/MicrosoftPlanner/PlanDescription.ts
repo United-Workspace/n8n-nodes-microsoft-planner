@@ -16,18 +16,6 @@ export const planOperations: INodeProperties[] = [
 		},
 		options: [
 			{
-				name: 'Count Buckets',
-				value: 'countBuckets',
-				description: 'Count buckets in a plan',
-				action: 'Count buckets',
-			},
-			{
-				name: 'Count Tasks',
-				value: 'countTasks',
-				description: 'Count tasks in a plan',
-				action: 'Count tasks',
-			},
-			{
 				name: 'Create',
 				value: 'create',
 				description: 'Create a new plan',
@@ -38,12 +26,6 @@ export const planOperations: INodeProperties[] = [
 				value: 'get',
 				description: 'Get a plan',
 				action: 'Get a plan',
-			},
-			{
-				name: 'Get Details',
-				value: 'getDetails',
-				description: 'Get plan details (labels, metadata)',
-				action: 'Get plan details',
 			},
 			{
 				name: 'Get Many',
@@ -58,10 +40,10 @@ export const planOperations: INodeProperties[] = [
 				action: 'Update a plan',
 			},
 			{
-				name: 'Update Details',
-				value: 'updateDetails',
-				description: 'Update plan details (raw JSON)',
-				action: 'Update plan details',
+				name: 'Delete',
+				value: 'delete',
+				description: 'Delete a plan',
+				action: 'Delete a plan',
 			},
 		],
 		default: 'getAll',
@@ -116,46 +98,83 @@ export const planFields: INodeProperties[] = [
 		displayOptions: {
 			show: {
 				resource: ['plan'],
-				operation: ['get', 'update', 'delete'],
+				operation: [
+					'get',
+					'update',
+					'delete',
+				],
 			},
 		},
 		default: '',
 		description: 'The ID of the plan',
 		placeholder: 'e.g. xqQg5FS2LkCp935s-FIFm2QAFkHM',
 	},
+	{
+		displayName: 'Additional Fields',
+		name: 'additionalFields',
+		type: 'collection',
+		placeholder: 'Add Field',
+		default: {},
+		displayOptions: {
+			show: {
+				resource: ['plan'],
+				operation: ['get'],
+			},
+		},
+		options: [
+			{
+				displayName: 'Include Details',
+				name: 'includeDetails',
+				type: 'boolean',
+				default: false,
+				description: 'Whether to include plan details (labels, metadata, etc.)',
+			},
+		],
+	},
 
 	// ----------------------------------
 	//         plan:getAll
 	// ----------------------------------
 	{
-		displayName: 'Return All',
-		name: 'returnAll',
-		type: 'boolean',
+		displayName: 'Scope',
+		name: 'scope',
+		type: 'options',
 		displayOptions: {
 			show: {
 				resource: ['plan'],
 				operation: ['getAll'],
 			},
 		},
-		default: false,
-		description: 'Whether to return all results or only up to a given limit',
+		options: [
+			{
+				name: 'My Plans',
+				value: 'my',
+				description: 'Plans the current user is a member of',
+			},
+			{
+				name: 'Group',
+				value: 'group',
+				description: 'Plans that belong to a specific Microsoft 365 group (owner)',
+			},
+		],
+		default: 'my',
+		description: 'Which set of plans to list',
 	},
 	{
-		displayName: 'Limit',
-		name: 'limit',
-		type: 'number',
+		displayName: 'Group ID',
+		name: 'groupId',
+		type: 'string',
 		displayOptions: {
 			show: {
 				resource: ['plan'],
 				operation: ['getAll'],
-				returnAll: [false],
+				scope: ['group'],
 			},
 		},
-		typeOptions: {
-			minValue: 1,
-		},
-		default: 50,
-		description: 'Max number of results to return',
+		default: '',
+		required: true,
+		description: 'The Microsoft 365 group ID whose plans to list (owner)',
+		placeholder: 'e.g. 6ff15978-94d4-414f-a497-295a245718bc',
 	},
 
 	// ----------------------------------
@@ -181,27 +200,53 @@ export const planFields: INodeProperties[] = [
 				default: '',
 				description: 'Title of the plan',
 			},
+			{
+				displayName: 'Category Descriptions',
+				name: 'categoryDescriptions',
+				type: 'collection',
+				placeholder: 'Add Category',
+				default: {},
+				description: 'Labels for up to 25 categories on the plan',
+				options: [
+					{ displayName: 'Category 1', name: 'category1', type: 'string', default: '', description: 'Label for category1' },
+					{ displayName: 'Category 2', name: 'category2', type: 'string', default: '', description: 'Label for category2' },
+					{ displayName: 'Category 3', name: 'category3', type: 'string', default: '', description: 'Label for category3' },
+					{ displayName: 'Category 4', name: 'category4', type: 'string', default: '', description: 'Label for category4' },
+					{ displayName: 'Category 5', name: 'category5', type: 'string', default: '', description: 'Label for category5' },
+					{ displayName: 'Category 6', name: 'category6', type: 'string', default: '', description: 'Label for category6' },
+					{ displayName: 'Category 7', name: 'category7', type: 'string', default: '', description: 'Label for category7' },
+					{ displayName: 'Category 8', name: 'category8', type: 'string', default: '', description: 'Label for category8' },
+					{ displayName: 'Category 9', name: 'category9', type: 'string', default: '', description: 'Label for category9' },
+					{ displayName: 'Category 10', name: 'category10', type: 'string', default: '', description: 'Label for category10' },
+					{ displayName: 'Category 11', name: 'category11', type: 'string', default: '', description: 'Label for category11' },
+					{ displayName: 'Category 12', name: 'category12', type: 'string', default: '', description: 'Label for category12' },
+					{ displayName: 'Category 13', name: 'category13', type: 'string', default: '', description: 'Label for category13' },
+					{ displayName: 'Category 14', name: 'category14', type: 'string', default: '', description: 'Label for category14' },
+					{ displayName: 'Category 15', name: 'category15', type: 'string', default: '', description: 'Label for category15' },
+					{ displayName: 'Category 16', name: 'category16', type: 'string', default: '', description: 'Label for category16' },
+					{ displayName: 'Category 17', name: 'category17', type: 'string', default: '', description: 'Label for category17' },
+					{ displayName: 'Category 18', name: 'category18', type: 'string', default: '', description: 'Label for category18' },
+					{ displayName: 'Category 19', name: 'category19', type: 'string', default: '', description: 'Label for category19' },
+					{ displayName: 'Category 20', name: 'category20', type: 'string', default: '', description: 'Label for category20' },
+					{ displayName: 'Category 21', name: 'category21', type: 'string', default: '', description: 'Label for category21' },
+					{ displayName: 'Category 22', name: 'category22', type: 'string', default: '', description: 'Label for category22' },
+					{ displayName: 'Category 23', name: 'category23', type: 'string', default: '', description: 'Label for category23' },
+					{ displayName: 'Category 24', name: 'category24', type: 'string', default: '', description: 'Label for category24' },
+					{ displayName: 'Category 25', name: 'category25', type: 'string', default: '', description: 'Label for category25' },
+				],
+			},
+			{
+				displayName: 'Shared With (plannerUserIds JSON)',
+				name: 'sharedWithJson',
+				type: 'string',
+				typeOptions: {
+					rows: 5,
+				},
+				default: '',
+				description:
+					'JSON object mapping user IDs to booleans (e.g. {"6463a5ce-...": true})',
+			},
 		],
 	},
 
-	// ----------------------------------
-	//         plan:updateDetails
-	// ----------------------------------
-	{
-		displayName: 'Plan Details JSON',
-		name: 'detailsJson',
-		type: 'string',
-		required: true,
-		typeOptions: {
-			rows: 5,
-		},
-		displayOptions: {
-			show: {
-				resource: ['plan'],
-				operation: ['updateDetails'],
-			},
-		},
-		default: '',
-		description: 'Raw JSON body to send to /planner/plans/{planId}/details (e.g. {"categoryDescriptions": {...}})',
-	},
 ];

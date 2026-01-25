@@ -16,12 +16,6 @@ export const bucketOperations: INodeProperties[] = [
 		},
 		options: [
 			{
-				name: 'Count Tasks',
-				value: 'countTasks',
-				description: 'Count tasks in a bucket',
-				action: 'Count tasks in bucket',
-			},
-			{
 				name: 'Create',
 				value: 'create',
 				description: 'Create a new bucket in a plan',
@@ -44,6 +38,12 @@ export const bucketOperations: INodeProperties[] = [
 				value: 'update',
 				description: 'Update a bucket',
 				action: 'Update a bucket',
+			},
+			{
+				name: 'Delete',
+				value: 'delete',
+				description: 'Delete a bucket',
+				action: 'Delete a bucket',
 			},
 		],
 		default: 'getAll',
@@ -75,36 +75,7 @@ export const bucketFields: INodeProperties[] = [
 	// ----------------------------------
 	//         bucket:getAll
 	// ----------------------------------
-	{
-		displayName: 'Return All',
-		name: 'returnAll',
-		type: 'boolean',
-		displayOptions: {
-			show: {
-				resource: ['bucket'],
-				operation: ['getAll'],
-			},
-		},
-		default: false,
-		description: 'Whether to return all results or only up to a given limit',
-	},
-	{
-			displayName: 'Limit',
-			name: 'limit',
-			type: 'number',
-			displayOptions: {
-				show: {
-					resource: ['bucket'],
-					operation: ['getAll'],
-					returnAll: [false],
-				},
-			},
-			typeOptions: {
-				minValue: 1,
-			},
-			default: 50,
-			description: 'Max number of results to return',
-		},
+	// No Return All / Limit options; Graph does not support $top/$limit for Planner.
 	{
 		displayName: 'Name',
 		name: 'name',
@@ -121,7 +92,7 @@ export const bucketFields: INodeProperties[] = [
 	},
 
 	// ----------------------------------
-	//         bucket:get / bucket:update
+	//         bucket:get / bucket:update / bucket:delete
 	// ----------------------------------
 	{
 		displayName: 'Bucket ID',
@@ -131,7 +102,7 @@ export const bucketFields: INodeProperties[] = [
 		displayOptions: {
 			show: {
 				resource: ['bucket'],
-				operation: ['get', 'update'],
+				operation: ['get', 'update', 'delete'],
 			},
 		},
 		default: '',
