@@ -243,6 +243,7 @@ The **Plan** resource allows you to manage Microsoft Planner plans:
 The **Bucket** resource manages the columns or categories within a plan:
 
 - **Create**: Requires a **Plan ID** and a **Name**.
+  - **Upsert**: When enabled, the node will check if a bucket with the same name already exists in the plan and return that instead of creating a duplicate.
 - **Get Many**: Lists all buckets within a specific **Plan ID**.
 - **Update**: Change the bucket **Name** and its **Order Hint** (controlling the position in the UI).
 - **Delete**: Removes the bucket from the plan.

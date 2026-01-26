@@ -876,6 +876,23 @@ export class MicrosoftPlanner implements INodeType {
 					if (operation === 'create') {
 						const planId = this.getNodeParameter('planId', i) as string;
 						const name = this.getNodeParameter('name', i) as string;
+						const upsert = this.getNodeParameter('upsert', i, false) as boolean;
+
+						if (upsert) {
+							// Check if bucket already exists
+							const buckets = await microsoftApiRequestAllItems.call(
+								this,
+								'value',
+								'GET',
+								`/planner/plans/${planId}/buckets`,
+							);
+
+							const existingBucket = buckets.find((b: any) => b.name === name);
+							if (existingBucket) {
+								returnData.push(existingBucket);
+								continue;
+							}
+						}
 
 						const body: IDataObject = {
 							name,

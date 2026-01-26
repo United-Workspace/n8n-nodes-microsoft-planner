@@ -90,6 +90,19 @@ export const bucketFields: INodeProperties[] = [
 		default: '',
 		description: 'Name of the bucket',
 	},
+	{
+		displayName: 'Upsert',
+		name: 'upsert',
+		type: 'boolean',
+		default: false,
+		displayOptions: {
+			show: {
+				resource: ['bucket'],
+				operation: ['create'],
+			},
+		},
+		description: 'Whether to return the existing bucket if one with the same name already exists in the plan',
+	},
 
 	// ----------------------------------
 	//         bucket:get / bucket:update / bucket:delete
