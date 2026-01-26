@@ -424,7 +424,7 @@ export class MicrosoftPlanner implements INodeType {
 						}
 
 						// Update description or references if provided
-						if (updateFields.description || updateFields.references) {
+						if (updateFields.description || updateFields.references || updateFields.replaceAllReferences) {
 							const details = await microsoftApiRequest.call(
 								this,
 								'GET',
@@ -438,10 +438,20 @@ export class MicrosoftPlanner implements INodeType {
 								detailsBody.description = updateFields.description;
 							}
 
+							const referencesBody: IDataObject = {};
+
+							// 1. If replaceAllReferences is true, set all existing references to null
+							if (updateFields.replaceAllReferences && details.references) {
+								for (const key of Object.keys(details.references)) {
+									referencesBody[key] = null;
+								}
+							}
+
+							// 2. Add new/updated references
 							if (updateFields.references) {
 								const references = updateFields.references as IDataObject;
 								const referenceList = references.reference as IDataObject[];
-								const referencesBody: IDataObject = {};
+
 								for (const reference of referenceList) {
 									const url = reference.url as string;
 									const alias = reference.alias as string;
@@ -454,6 +464,9 @@ export class MicrosoftPlanner implements INodeType {
 										type,
 									};
 								}
+							}
+
+							if (Object.keys(referencesBody).length > 0) {
 								detailsBody.references = referencesBody;
 							}
 
@@ -478,7 +491,7 @@ export class MicrosoftPlanner implements INodeType {
 						);
 
 						// If description (task details) was updated, also return latest details
-						if (Object.prototype.hasOwnProperty.call(updateFields, 'description') || Object.prototype.hasOwnProperty.call(updateFields, 'references')) {
+						if (Object.prototype.hasOwnProperty.call(updateFields, 'description') || Object.prototype.hasOwnProperty.call(updateFields, 'references') || Object.prototype.hasOwnProperty.call(updateFields, 'replaceAllReferences')) {
 							const details = await microsoftApiRequest.call(
 								this,
 								'GET',

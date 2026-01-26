@@ -536,6 +536,19 @@ export const taskFields: INodeProperties[] = [
 				],
 				description: 'Add attachments to the task',
 			},
+			{
+				displayName: 'Replace All Attachments',
+				name: 'replaceAllReferences',
+				type: 'boolean',
+				default: false,
+				displayOptions: {
+					show: {
+						resource: ['task'],
+						operation: ['update'],
+					},
+				},
+				description: 'Whether to remove all existing attachments before adding the new ones. If true, the new list will replace the old one entirely.',
+			},
 		],
 	},
 	// ----------------------------------
