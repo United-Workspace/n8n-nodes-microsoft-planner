@@ -35,7 +35,7 @@ You need to have:
 - A Microsoft Planner plan created
 - Azure AD App Registration with the following API permissions:
   - `Tasks.ReadWrite` - Read and write tasks
-  - `Group.ReadWrite.All` - Read and write all groups (required for Planner)
+  - `Group.ReadWrite.All` - Read and write all groups (required for Planner and comments)
   - `User.Read.All` - Read all users (required for user assignment by email)
 
 ## Setting up Azure AD App
@@ -56,11 +56,11 @@ You need to have:
 4. Select **Delegated permissions**
 5. Add the following permissions:
    - `Tasks.ReadWrite` - Read and write tasks
-   - `Group.ReadWrite.All` - Read and write all groups (required for Planner)
+   - `Group.ReadWrite.All` - Read and write all groups (required for Planner and comments)
    - `User.Read.All` - Read all users' basic profiles (required for user assignment)
 6. Click **Grant admin consent**
 
-**Note**: The `User.Read.All` permission is required if you want to assign tasks to users by email address.
+**Note**: The `User.Read.All` permission is required if you want to assign tasks to users by email address. The `Group.ReadWrite.All` permission is required for both Planner operations and creating/reading comments.
 
 ### Create Client Secret
 
@@ -86,21 +86,25 @@ Configure the Microsoft Planner OAuth2 API credentials in n8n:
 
 ## Features
 
-- **Resource Locator UI**: Choose between "From List" (dropdown) or "By ID" (manual input) for Buckets
-- **User Assignment**: Assign tasks to users by email address
 - **Priority Management**: Easy-to-use priority dropdown (Urgent, Important, Medium, Low)
 - **Full CRUD Operations**: Create, Read, Update, and Delete tasks
+- **Comment Support**: Create and retrieve comments on tasks
 
 ## Operations
 
 ### Task
 
-- **Create** - Create a new task
-- **Get** - Get a task by ID
+- **Create** - Create a new task (supports Checklist and Attachments)
+- **Get** - Get a task by ID (optionally include details)
 - **Get Many** - Get multiple tasks from a plan or bucket
-- **Update** - Update an existing task
+- **Update** - Update an existing task (supports Checklist and Attachments)
 - **Delete** - Delete a task
 - **Get Files** - Get all files attached to a task
+
+### Comment
+
+- **Create** - Create a new comment on a task
+- **Get Many** - Get all comments from a task
 
 ## Usage
 
@@ -143,10 +147,10 @@ To update a task:
 - Description
 - Priority (via dropdown)
 - Assigned users (via email list)
-- Due Date Time
-- Start Date Time
-- Percent Complete
-- Move to different bucket
+- **Due Date Time**
+- **Start Date Time**
+- **Percent Complete**
+- **Move to different bucket
 
 ### Getting Files from a Task
 
@@ -162,6 +166,37 @@ To get all files attached to a task:
      - **previewPriority**: Priority for preview display
      - **lastModifiedDateTime**: When the file reference was last modified
      - **lastModifiedBy**: Who last modified the reference
+
+### Creating a Comment
+
+To create a comment on a task:
+1. Select **Comment** as the resource
+2. Choose **Create** operation
+3. Enter the **Task ID** manually
+4. Enter the **Content** of the comment
+5. Optionally select **Content Type**:
+   - **Text** (default): Plain text that will be wrapped in HTML
+   - **HTML**: Custom HTML content
+
+The comment will be created as a conversation thread in the Microsoft 365 Group associated with the plan. If the task doesn't have a conversation thread yet, one will be created automatically.
+
+### Getting Comments from a Task
+
+To get all comments from a task:
+1. Select **Comment** as the resource
+2. Choose **Get Many** operation
+3. Enter the **Task ID** manually
+4. The operation returns:
+   - **taskId**: The task ID
+   - **commentCount**: Number of comments
+   - **comments**: Array of comment objects with:
+     - **id**: Comment ID
+     - **content**: Comment body (HTML)
+     - **from**: Author information
+     - **createdDateTime**: When the comment was created
+     - **lastModifiedDateTime**: When the comment was last modified
+
+**Note**: Once a comment is posted in Planner, it cannot be deleted or edited via the Microsoft Graph API or the Planner UI (for Basic plans). This is a limitation of the Microsoft 365 Groups conversation system that Planner uses.
 
 ### How to Find Plan IDs
 
@@ -197,6 +232,12 @@ Tested with n8n version 1.0.0 and above.
 - [Microsoft Graph Explorer](https://developer.microsoft.com/en-us/graph/graph-explorer)
 
 ## Version History
+
+### x.x
+- **Added Comment Support**
+  - Create and retrieve comments on Planner tasks
+  - Automatic conversation thread management
+  - Support for both HTML and plain text comments
 
 ### 1.4.0
 - **Updated branding**

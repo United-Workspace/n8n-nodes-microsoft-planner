@@ -162,3 +162,22 @@ export function generateGuid(): string {
 		return v.toString(16);
 	});
 }
+
+/**
+ * Formats comment content for Microsoft Graph API conversation posts.
+ * Wraps plain text in HTML paragraph tags if needed.
+ */
+export function formatCommentContent(content: string, contentType: string = 'text'): IDataObject {
+	// When we wrap text in HTML tags, we need to set contentType to 'html'
+	// Otherwise the tags will be displayed as literal text in Planner
+	const isHtml = contentType === 'html';
+	const formattedContent = isHtml ? content : `<p>${content}</p>`;
+
+	return {
+		body: {
+			contentType: 'html', // Always use 'html' since we're wrapping in tags
+			content: formattedContent,
+		},
+	};
+}
+

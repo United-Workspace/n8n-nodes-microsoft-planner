@@ -12,6 +12,7 @@ import {
 	cleanETag,
 	createAssignmentsObject,
 	encodeReferenceKey,
+	formatCommentContent,
 	formatDateTime,
 	generateGuid,
 	getUserIdByEmail,
@@ -22,6 +23,7 @@ import {
 import { taskFields, taskOperations } from './TaskDescription';
 import { planFields, planOperations } from './PlanDescription';
 import { bucketFields, bucketOperations } from './BucketDescription';
+import { commentFields, commentOperations } from './CommentDescription';
 
 export class MicrosoftPlanner implements INodeType {
 	description: INodeTypeDescription = {
@@ -62,6 +64,10 @@ export class MicrosoftPlanner implements INodeType {
 						name: 'Bucket',
 						value: 'bucket',
 					},
+					{
+						name: 'Comment',
+						value: 'comment',
+					},
 				],
 				default: 'task',
 			},
@@ -72,6 +78,8 @@ export class MicrosoftPlanner implements INodeType {
 			...planFields,
 			...bucketOperations,
 			...bucketFields,
+			...commentOperations,
+			...commentFields,
 		],
 	};
 
@@ -947,6 +955,162 @@ export class MicrosoftPlanner implements INodeType {
 						returnData.push({ success: true, bucketId });
 					}
 				}
+
+				// ----------------------------------
+				//         comment resource
+				// ----------------------------------
+				if (resource === 'comment') {
+					// ----------------------------------
+					//         comment:create
+					// ----------------------------------
+					if (operation === 'create') {
+						const taskIdParam = this.getNodeParameter('taskId', i);
+						const taskId = typeof taskIdParam === 'string' ? taskIdParam : (taskIdParam as IDataObject).value as string;
+						const content = this.getNodeParameter('content', i) as string;
+						const additionalFields = this.getNodeParameter('additionalFields', i) as IDataObject;
+						const contentType = (additionalFields.contentType as string) || 'text';
+
+						// Get the task to retrieve planId and conversationThreadId
+						const task = await microsoftApiRequest.call(
+							this,
+							'GET',
+							`/planner/tasks/${taskId}`,
+						);
+
+						// Get the plan to retrieve the group ID
+						const plan = await microsoftApiRequest.call(
+							this,
+							'GET',
+							`/planner/plans/${task.planId}`,
+						);
+
+						const groupId = plan.container.containerId;
+						const commentBody = formatCommentContent(content, contentType);
+
+						let conversationId: string;
+						let threadId: string;
+
+						if (!task.conversationThreadId) {
+							// Create a new conversation thread
+							const conversation = await microsoftApiRequest.call(
+								this,
+								'POST',
+								`/groups/${groupId}/conversations`,
+								{
+									topic: `Comments on task "${task.title}"`,
+									threads: [
+										{
+											posts: [commentBody],
+										},
+									],
+								},
+							);
+
+							conversationId = conversation.id;
+							threadId = conversation.threads[0].id;
+
+							// Update the task with the new conversationThreadId
+							const taskETag = cleanETag(task['@odata.etag']);
+							await microsoftApiRequest.call(
+								this,
+								'PATCH',
+								`/planner/tasks/${taskId}`,
+								{
+									conversationThreadId: threadId,
+								},
+								{},
+								undefined,
+								{
+									'If-Match': taskETag,
+								},
+							);
+						} else {
+							// Add a reply to the existing conversation thread
+							threadId = task.conversationThreadId;
+
+							// Get the conversation ID from the thread
+							const thread = await microsoftApiRequest.call(
+								this,
+								'GET',
+								`/groups/${groupId}/threads/${threadId}`,
+							);
+							conversationId = thread.conversationId || thread.id;
+
+							// Add reply to the thread
+							await microsoftApiRequest.call(
+								this,
+								'POST',
+								`/groups/${groupId}/conversations/${conversationId}/threads/${threadId}/reply`,
+								{
+									post: commentBody,
+								},
+							);
+						}
+
+						returnData.push({
+							success: true,
+							taskId,
+							conversationId,
+							threadId,
+							content,
+						});
+					}
+
+					// ----------------------------------
+					//         comment:getAll
+					// ----------------------------------
+					if (operation === 'getAll') {
+						const taskIdParam = this.getNodeParameter('taskId', i);
+						const taskId = typeof taskIdParam === 'string' ? taskIdParam : (taskIdParam as IDataObject).value as string;
+
+						// Get the task to retrieve conversationThreadId
+						const task = await microsoftApiRequest.call(
+							this,
+							'GET',
+							`/planner/tasks/${taskId}`,
+						);
+
+						if (!task.conversationThreadId) {
+							// No comments on this task
+							returnData.push({
+								taskId,
+								comments: [],
+								commentCount: 0,
+							});
+						} else {
+							// Get the plan to retrieve the group ID
+							const plan = await microsoftApiRequest.call(
+								this,
+								'GET',
+								`/planner/plans/${task.planId}`,
+							);
+
+							const groupId = plan.container.containerId;
+							const threadId = task.conversationThreadId;
+
+							// Get all posts from the conversation thread
+							const posts = await microsoftApiRequest.call(
+								this,
+								'GET',
+								`/groups/${groupId}/threads/${threadId}/posts`,
+							);
+
+							const comments = posts.value.map((post: IDataObject) => ({
+								id: post.id,
+								content: post.body,
+								from: post.from,
+								createdDateTime: post.createdDateTime,
+								lastModifiedDateTime: post.lastModifiedDateTime,
+							}));
+
+							returnData.push({
+								taskId,
+								comments,
+								commentCount: comments.length,
+							});
+						}
+					}
+				}
 			} catch (error) {
 				if (this.continueOnFail()) {
 					const errorMessage = error instanceof Error ? error.message : 'Unknown error';
@@ -960,3 +1124,5 @@ export class MicrosoftPlanner implements INodeType {
 		return [this.helpers.returnJsonArray(returnData)];
 	}
 }
+
+
