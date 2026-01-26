@@ -258,11 +258,50 @@ export const taskFields: INodeProperties[] = [
 				],
 				description: 'Add attachments to the task',
 			},
+			{
+				displayName: 'Checklist',
+				name: 'checklist',
+				type: 'fixedCollection',
+				default: {},
+				placeholder: 'Add Checklist Item',
+				typeOptions: {
+					multipleValues: true,
+				},
+				options: [
+					{
+						name: 'item',
+						displayName: 'Checklist Item',
+						values: [
+							{
+								displayName: 'ID',
+								name: 'id',
+								type: 'string',
+								default: '',
+								description: 'ID of the checklist item. Leave empty to generate a new ID.',
+							},
+							{
+								displayName: 'Title',
+								name: 'title',
+								type: 'string',
+								default: '',
+								required: true,
+								description: 'The title of the checklist item',
+							},
+							{
+								displayName: 'Is Checked',
+								name: 'isChecked',
+								type: 'boolean',
+								default: false,
+								description: 'Whether the item is checked',
+							},
+						],
+					},
+				],
+				description: 'Add checklist items to the task',
+			},
 		],
 	},
 
-	// ----------------------------------
-	//         task:get
 	// ----------------------------------
 	{
 		displayName: 'Task',
@@ -542,6 +581,54 @@ export const taskFields: INodeProperties[] = [
 				type: 'boolean',
 				default: false,
 				description: 'Whether to remove all existing attachments before adding the new ones. If true, the new list will replace the old one entirely.',
+			},
+			{
+				displayName: 'Checklist',
+				name: 'checklist',
+				type: 'fixedCollection',
+				default: {},
+				placeholder: 'Add Checklist Item',
+				typeOptions: {
+					multipleValues: true,
+				},
+				options: [
+					{
+						name: 'item',
+						displayName: 'Checklist Item',
+						values: [
+							{
+								displayName: 'ID',
+								name: 'id',
+								type: 'string',
+								default: '',
+								description: 'ID of the checklist item. Leave empty to generate a new ID.',
+							},
+							{
+								displayName: 'Title',
+								name: 'title',
+								type: 'string',
+								default: '',
+								required: true,
+								description: 'The title of the checklist item',
+							},
+							{
+								displayName: 'Is Checked',
+								name: 'isChecked',
+								type: 'boolean',
+								default: false,
+								description: 'Whether the item is checked',
+							},
+						],
+					},
+				],
+				description: 'Add checklist items to the task',
+			},
+			{
+				displayName: 'Replace All Checklist Items',
+				name: 'replaceAllChecklistItems',
+				type: 'boolean',
+				default: false,
+				description: 'Whether to remove all existing checklist items before adding/updating the list.',
 			},
 		],
 	},

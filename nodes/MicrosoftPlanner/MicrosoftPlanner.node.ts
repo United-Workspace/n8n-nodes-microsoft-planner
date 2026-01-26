@@ -13,6 +13,7 @@ import {
 	createAssignmentsObject,
 	encodeReferenceKey,
 	formatDateTime,
+	generateGuid,
 	getUserIdByEmail,
 	microsoftApiRequest,
 	microsoftApiRequestAllItems,
@@ -230,8 +231,8 @@ export class MicrosoftPlanner implements INodeType {
 							body,
 						);
 
-						// Add description or references if provided
-						if (additionalFields.description || additionalFields.references) {
+						// Add description, references, or checklist if provided
+						if (additionalFields.description || additionalFields.references || additionalFields.checklist) {
 							const details = await microsoftApiRequest.call(
 								this,
 								'GET',
@@ -265,6 +266,21 @@ export class MicrosoftPlanner implements INodeType {
 								detailsBody.references = referencesBody;
 							}
 
+							if (additionalFields.checklist) {
+								const checklist = additionalFields.checklist as IDataObject;
+								const checklistList = checklist.item as IDataObject[];
+								const checklistBody: IDataObject = {};
+								for (const item of checklistList) {
+									const id = (item.id as string) || generateGuid();
+									checklistBody[id] = {
+										'@odata.type': '#microsoft.graph.plannerChecklistItem',
+										title: item.title,
+										isChecked: item.isChecked,
+									};
+								}
+								detailsBody.checklist = checklistBody;
+							}
+
 							await microsoftApiRequest.call(
 								this,
 								'PATCH',
@@ -276,6 +292,14 @@ export class MicrosoftPlanner implements INodeType {
 									'If-Match': eTag,
 								},
 							);
+
+							// Fetch latest details to return in response
+							const finalDetails = await microsoftApiRequest.call(
+								this,
+								'GET',
+								`/planner/tasks/${responseData.id}/details`,
+							);
+							(responseData as IDataObject).details = finalDetails;
 						}
 
 						returnData.push(responseData);
@@ -423,8 +447,8 @@ export class MicrosoftPlanner implements INodeType {
 							);
 						}
 
-						// Update description or references if provided
-						if (updateFields.description || updateFields.references || updateFields.replaceAllReferences) {
+						// Update description, references, or checklist if provided
+						if (updateFields.description || updateFields.references || updateFields.checklist || updateFields.replaceAllReferences || updateFields.replaceAllChecklistItems) {
 							const details = await microsoftApiRequest.call(
 								this,
 								'GET',
@@ -470,6 +494,34 @@ export class MicrosoftPlanner implements INodeType {
 								detailsBody.references = referencesBody;
 							}
 
+							const checklistBody: IDataObject = {};
+
+							// 1. If replaceAllChecklistItems is true, set all existing checklist items to null
+							if (updateFields.replaceAllChecklistItems && details.checklist) {
+								for (const key of Object.keys(details.checklist)) {
+									checklistBody[key] = null;
+								}
+							}
+
+							// 2. Add new/updated checklist items
+							if (updateFields.checklist) {
+								const checklist = updateFields.checklist as IDataObject;
+								const checklistList = checklist.item as IDataObject[];
+
+								for (const item of checklistList) {
+									const id = (item.id as string) || generateGuid();
+									checklistBody[id] = {
+										'@odata.type': '#microsoft.graph.plannerChecklistItem',
+										title: item.title,
+										isChecked: item.isChecked,
+									};
+								}
+							}
+
+							if (Object.keys(checklistBody).length > 0) {
+								detailsBody.checklist = checklistBody;
+							}
+
 							await microsoftApiRequest.call(
 								this,
 								'PATCH',
@@ -491,7 +543,11 @@ export class MicrosoftPlanner implements INodeType {
 						);
 
 						// If description (task details) was updated, also return latest details
-						if (Object.prototype.hasOwnProperty.call(updateFields, 'description') || Object.prototype.hasOwnProperty.call(updateFields, 'references') || Object.prototype.hasOwnProperty.call(updateFields, 'replaceAllReferences')) {
+						if (Object.prototype.hasOwnProperty.call(updateFields, 'description') ||
+							Object.prototype.hasOwnProperty.call(updateFields, 'references') ||
+							Object.prototype.hasOwnProperty.call(updateFields, 'checklist') ||
+							Object.prototype.hasOwnProperty.call(updateFields, 'replaceAllReferences') ||
+							Object.prototype.hasOwnProperty.call(updateFields, 'replaceAllChecklistItems')) {
 							const details = await microsoftApiRequest.call(
 								this,
 								'GET',
