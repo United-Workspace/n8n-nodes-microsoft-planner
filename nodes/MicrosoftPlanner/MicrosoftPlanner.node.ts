@@ -163,6 +163,37 @@ export class MicrosoftPlanner implements INodeType {
 					return { results: [] };
 				}
 			},
+
+			async getGroups(this: ILoadOptionsFunctions) {
+				try {
+					const groups = await microsoftApiRequestAllItems.call(
+						this,
+						'value',
+						'GET',
+						'/me/memberOf/$/microsoft.graph.group',
+					);
+
+					if (!groups || groups.length === 0) {
+						return { results: [] };
+					}
+
+					// Filter for Microsoft 365 Groups (Unified Groups)
+					// Security groups are not supported for Planner plans
+					const unifiedGroups = groups.filter((group: any) =>
+						group.groupTypes?.includes('Unified'),
+					);
+
+					return {
+						results: unifiedGroups.map((group: any) => ({
+							name: group.displayName || group.id,
+							value: group.id,
+						})),
+					};
+				} catch (error) {
+					console.error('Error loading groups:', error);
+					return { results: [] };
+				}
+			},
 		},
 	};
 
@@ -636,7 +667,10 @@ export class MicrosoftPlanner implements INodeType {
 				if (resource === 'plan') {
 					// plan:create -> POST /planner/plans
 					if (operation === 'create') {
-						const owner = this.getNodeParameter('owner', i) as string;
+						const ownerParam = this.getNodeParameter('owner', i);
+						const owner = typeof ownerParam === 'string'
+							? ownerParam
+							: (ownerParam as IDataObject).value as string;
 						const title = this.getNodeParameter('title', i) as string;
 
 						const body: IDataObject = { owner, title };

@@ -86,8 +86,11 @@ Configure the Microsoft Planner OAuth2 API credentials in n8n:
 
 ## Features
 
+- **Resource Locator UI**: Choose between "From List" (dropdown) or "By ID" (manual input) for Buckets
+- **User Assignment**: Assign tasks to users by email address
 - **Priority Management**: Easy-to-use priority dropdown (Urgent, Important, Medium, Low)
-- **Full CRUD Operations**: Create, Read, Update, and Delete tasks
+- **Comprehensive Task Support**: Full support for Task details including Checklist items and Attachments
+- **Full CRUD Support**: Manage Tasks, Plans, and Buckets
 - **Comment Support**: Create and retrieve comments on tasks
 
 ## Operations
@@ -100,6 +103,22 @@ Configure the Microsoft Planner OAuth2 API credentials in n8n:
 - **Update** - Update an existing task (supports Checklist and Attachments)
 - **Delete** - Delete a task
 - **Get Files** - Get all files attached to a task
+
+### Plan
+
+- **Create** - Create a new plan in a group
+- **Get** - Get a plan by ID (optionally include details)
+- **Get Many** - Get all plans (My Plans or Group Plans)
+- **Update** - Update a plan (supports Title, Category Labels, and Sharing)
+- **Delete** - Delete a plan
+
+### Bucket
+
+- **Create** - Create a new bucket in a plan
+- **Get** - Get a bucket by ID
+- **Get Many** - Get all buckets in a plan
+- **Update** - Update a bucket title and order
+- **Delete** - Delete a bucket
 
 ### Comment
 
@@ -126,6 +145,9 @@ Optional fields:
 - **Due Date Time**: When the task should be completed
 - **Start Date Time**: When work on the task should begin
 - **Percent Complete**: Task completion percentage (0-100)
+- **Checklist**: Add multiple checklist items with titles and checked status
+- **Attachments**: Add external references/attachments with URLs, aliases, and types (Word, Excel, etc.)
+- **Description**: Detailed task description (stored in task details)
 
 ### Getting Tasks
 
@@ -150,7 +172,10 @@ To update a task:
 - **Due Date Time**
 - **Start Date Time**
 - **Percent Complete**
-- **Move to different bucket
+- **Move to different bucket**
+- **Checklist**: Add new items or update existing ones (supports "Replace All" mode)
+- **Attachments**: Add new references (supports "Replace All" mode)
+- **Description**: Update the task description
 
 ### Getting Files from a Task
 
@@ -198,6 +223,30 @@ To get all comments from a task:
 
 **Note**: Once a comment is posted in Planner, it cannot be deleted or edited via the Microsoft Graph API or the Planner UI (for Basic plans). This is a limitation of the Microsoft 365 Groups conversation system that Planner uses.
 
+### Working with Plans
+
+The **Plan** resource allows you to manage Microsoft Planner plans:
+
+- **Create**: Requires an **Owner Group** (selected from dropdown or entered as ID) and a **Title**.
+- **Get Many**:
+  - **My Plans**: Lists plans the authenticated user is a member of.
+  - **Group Plans**: Requires a **Group ID** to list plans owned by that specific group.
+- **Get**: Retrieve full plan metadata. Enable **Include Details** to get category descriptions (labels) and other metadata.
+- **Update**:
+  - Change the plan **Title**.
+  - **Category Descriptions**: Update the labels for the 25 color-coded categories (Category 1-25).
+  - **Shared With**: Update plan members using a JSON mapping of user IDs.
+- **Delete**: Permanently removes the plan.
+
+### Working with Buckets
+
+The **Bucket** resource manages the columns or categories within a plan:
+
+- **Create**: Requires a **Plan ID** and a **Name**.
+- **Get Many**: Lists all buckets within a specific **Plan ID**.
+- **Update**: Change the bucket **Name** and its **Order Hint** (controlling the position in the UI).
+- **Delete**: Removes the bucket from the plan.
+
 ### How to Find Plan IDs
 
 You can find your Plan ID in several ways:
@@ -238,6 +287,19 @@ Tested with n8n version 1.0.0 and above.
   - Create and retrieve comments on Planner tasks
   - Automatic conversation thread management
   - Support for both HTML and plain text comments
+- **Enhanced Task Details**
+  - **Checklist Support**: Full support for adding and managing checklist items
+  - **Attachments (References)**: Support for adding external URLs and files to tasks
+  - **Replace All Options**: New toggles to replace existing checklists or attachments entirely
+- **Plan Resource Support**
+  - CRUD operations for Plans
+  - Manage Category Labels (1-25)
+  - Manage Plan members (Shared With)
+- **Bucket Resource Support**
+  - CRUD operations for Buckets
+  - Manage bucket names and positioning (Order Hint)
+- **Robust Encoding**: Improved handling of special characters in attachment URLs
+- **Internal Improvements**: Better error handling and complete data fetch after updates
 
 ### 1.4.0
 - **Updated branding**

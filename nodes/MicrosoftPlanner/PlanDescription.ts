@@ -58,9 +58,10 @@ export const planFields: INodeProperties[] = [
 	//         plan:create
 	// ----------------------------------
 	{
-		displayName: 'Owner Group ID',
+		displayName: 'Owner Group',
 		name: 'owner',
-		type: 'string',
+		type: 'resourceLocator',
+		default: { mode: 'list', value: '' },
 		required: true,
 		displayOptions: {
 			show: {
@@ -68,9 +69,24 @@ export const planFields: INodeProperties[] = [
 				operation: ['create'],
 			},
 		},
-		default: '',
-		description: 'The ID of the Microsoft 365 group that owns the plan',
-		placeholder: 'e.g. 02bd9fd6-8f93-4758-87c3-1fb73740a315',
+		modes: [
+			{
+				displayName: 'From List',
+				name: 'list',
+				type: 'list',
+				typeOptions: {
+					searchListMethod: 'getGroups',
+					searchable: true,
+				},
+			},
+			{
+				displayName: 'By ID',
+				name: 'id',
+				type: 'string',
+				placeholder: 'e.g. 02bd9fd6-8f93-4758-87c3-1fb73740a315',
+			},
+		],
+		description: 'The Microsoft 365 group that will own the plan',
 	},
 	{
 		displayName: 'Title',
