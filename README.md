@@ -14,7 +14,7 @@ Follow the [installation guide](https://docs.n8n.io/integrations/community-nodes
 
 1. Go to **Settings > Community Nodes** in your n8n instance
 2. Select **Install**
-3. Enter `@blickwerk/n8n-nodes-microsoft-planner` in **Enter npm package name**
+3. Enter `@united-workspace/n8n-nodes-microsoft-planner` in **Enter npm package name**
 4. Agree to the [risks](https://docs.n8n.io/integrations/community-nodes/risks/) of using community nodes
 5. Select **Install**
 
@@ -25,7 +25,7 @@ After installing the node, you can use it like any other node in your workflows.
 To install manually:
 
 ```bash
-npm install @blickwerk/n8n-nodes-microsoft-planner
+npm install @united-workspace/n8n-nodes-microsoft-planner
 ```
 
 ## Prerequisites
@@ -283,7 +283,8 @@ Tested with n8n version 1.0.0 and above.
 
 ## Version History
 
-### x.x
+### 1.5.0
+- **Initial release under @united-workspace scope**
 - **Added Comment Support**
   - Create and retrieve comments on Planner tasks
   - Automatic conversation thread management
@@ -300,7 +301,7 @@ Tested with n8n version 1.0.0 and above.
   - CRUD operations for Buckets
   - Manage bucket names and positioning (Order Hint)
 - **Robust Encoding**: Improved handling of special characters in attachment URLs
-- **Internal Improvements**: Better error handling and complete data fetch after updates
+- **Internal Improvements**: Comprehensive build audit, improved error handling and data fetch reliability
 
 ### 1.4.0
 - **Updated branding**
@@ -411,18 +412,16 @@ Tested with n8n version 1.0.0 and above.
 
 ## Author
 
-Developed by **Blickwerk Media UG**
+Managed by **United Workspace GmbH**
 
-### About Blickwerk Media
+## Credits
 
-We're a digital agency based in Germany, building automation, design, and web solutions for clients across industries.
+This node was originally developed by [**Blickwerk Media UG**](https://github.com/blickwerk/n8n-nodes-microsoft-planner). We are grateful for their excellent work and contributions to the n8n community. 
 
-Our focus is on efficient workflows, strong brand experiences, and open-source contributions that make digital tools more connected.
+This version is a fork managed and actively developed by **United Workspace GmbH** to ensure continued support and new features for the n8n community.
 
-- **Web**: [blickwerk.media](https://blickwerk.media)
-- **LinkedIn**: [linkedin.com/company/blickwerkmedia](https://linkedin.com/company/blickwerkmedia)
-- **Instagram**: [instagram.com/blickwerk.media](https://instagram.com/blickwerk.media)
+**Web**: [united-workspace.de](https://united-workspace.de)
 
 ## Support
 
-For issues, questions, or contributions, please visit the [GitHub repository](https://github.com/blickwerk/n8n-nodes-microsoft-planner).
+For issues, questions, or contributions, please visit the [GitHub repository](https://github.com/united-workspace/n8n-nodes-microsoft-planner).
