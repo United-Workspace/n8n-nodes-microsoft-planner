@@ -283,6 +283,11 @@ Tested with n8n version 1.0.0 and above.
 
 ## Version History
 
+### 1.5.1
+- **Maintenance release**
+- Replaced deprecated `requestOAuth2` helper with `httpRequestWithAuthentication` in Microsoft Planner API requests
+- Removed `console` logging from the Microsoft Planner node and helper to satisfy n8n community package scan requirements
+
 ### 1.5.0
 - **Initial release under @united-workspace scope**
 - **Added Comment Support**

@@ -1,6 +1,6 @@
 {
   "name": "@united-workspace/n8n-nodes-microsoft-planner",
-  "version": "1.5.0",
+  "version": "1.5.1",
   "description": "n8n node for Microsoft Planner - Create and retrieve tasks",
   "keywords": [
     "n8n-community-node-package",
