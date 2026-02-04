@@ -110,7 +110,6 @@ export class MicrosoftPlanner implements INodeType {
 						})),
 					};
 				} catch (error) {
-					console.error('Error loading buckets:', error);
 					return { results: [] };
 				}
 			},
@@ -159,7 +158,6 @@ export class MicrosoftPlanner implements INodeType {
 						})),
 					};
 				} catch (error) {
-					console.error('Error loading tasks:', error);
 					return { results: [] };
 				}
 			},
@@ -190,7 +188,6 @@ export class MicrosoftPlanner implements INodeType {
 						})),
 					};
 				} catch (error) {
-					console.error('Error loading groups:', error);
 					return { results: [] };
 				}
 			},
@@ -251,15 +248,11 @@ export class MicrosoftPlanner implements INodeType {
 								const userId = await getUserIdByEmail.call(this, email);
 								if (userId) {
 									userIds.push(userId);
-								} else {
-									console.warn(`Could not find user ID for email: ${email}`);
 								}
 							}
 
 							if (userIds.length > 0) {
 								body.assignments = createAssignmentsObject(userIds);
-							} else if (emails.length > 0) {
-								console.warn('No valid user IDs found for assignment. Check if User.Read.All permission is granted.');
 							}
 						}
 
@@ -459,15 +452,11 @@ export class MicrosoftPlanner implements INodeType {
 								const userId = await getUserIdByEmail.call(this, email);
 								if (userId) {
 									userIds.push(userId);
-								} else {
-									console.warn(`Could not find user ID for email: ${email}`);
 								}
 							}
 
 							if (userIds.length > 0) {
 								body.assignments = createAssignmentsObject(userIds);
-							} else if (emails.length > 0) {
-								console.warn('No valid user IDs found for assignment. Check if User.Read.All permission is granted.');
 							}
 						}
 

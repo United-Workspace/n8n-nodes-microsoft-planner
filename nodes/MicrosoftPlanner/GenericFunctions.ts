@@ -37,7 +37,11 @@ export async function microsoftApiRequest(
 			delete options.body;
 		}
 
-		return await this.helpers.requestOAuth2.call(this, 'microsoftPlannerOAuth2Api', options);
+		return await this.helpers.httpRequestWithAuthentication.call(
+			this,
+			'microsoftPlannerOAuth2Api',
+			options,
+		);
 	} catch (error) {
 		throw new NodeApiError(this.getNode(), error as any);
 	}
@@ -103,8 +107,6 @@ export async function getUserIdByEmail(
 		);
 		return response.id;
 	} catch (error: any) {
-		// Log error for debugging
-		console.error(`Failed to get user ID for email ${email}:`, error.message || error);
 		return null;
 	}
 }
