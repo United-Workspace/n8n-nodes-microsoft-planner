@@ -1,6 +1,6 @@
 {
   "name": "@united-workspace/n8n-nodes-microsoft-planner",
-  "version": "1.5.1",
+  "version": "1.5.2",
   "description": "n8n node for Microsoft Planner - Create and retrieve tasks",
   "keywords": [
     "n8n-community-node-package",
@@ -55,9 +55,6 @@
     "n8n-workflow": "^1.0.0",
     "prettier": "^2.8.8",
     "typescript": "^5.0.4"
-  },
-  "dependencies": {
-    "n8n-core": "^1.0.0"
   },
   "peerDependencies": {
     "n8n-workflow": "^1.0.0"

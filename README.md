@@ -283,6 +283,11 @@ Tested with n8n version 1.0.0 and above.
 
 ## Version History
 
+### 1.5.2
+- **Maintenance release**
+- Removed runtime dependency on `n8n-core` to comply with n8n community node requirements
+- No functional changes to node behavior
+
 ### 1.5.1
 - **Maintenance release**
 - Replaced deprecated `requestOAuth2` helper with `httpRequestWithAuthentication` in Microsoft Planner API requests
