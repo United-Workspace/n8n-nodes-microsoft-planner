@@ -103,6 +103,28 @@ export const bucketFields: INodeProperties[] = [
 		},
 		description: 'Whether to return the existing bucket if one with the same name already exists in the plan',
 	},
+	{
+		displayName: 'Additional Fields',
+		name: 'additionalFields',
+		type: 'collection',
+		placeholder: 'Add Field',
+		default: {},
+		displayOptions: {
+			show: {
+				resource: ['bucket'],
+				operation: ['getAll'],
+			},
+		},
+		options: [
+			{
+				displayName: 'Select Properties',
+				name: 'select',
+				type: 'string',
+				default: '',
+				description: 'Comma-separated list of properties to specify which fields to return (e.g. id,name)',
+			},
+		],
+	},
 
 	// ----------------------------------
 	//         bucket:get / bucket:update / bucket:delete

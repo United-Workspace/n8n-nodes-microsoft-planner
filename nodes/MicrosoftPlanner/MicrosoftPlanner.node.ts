@@ -458,11 +458,19 @@ export class MicrosoftPlanner implements INodeType {
 							);
 						}
 
+						const additionalFields = this.getNodeParameter('additionalFields', i) as IDataObject;
+						const qs: IDataObject = {};
+						if (additionalFields?.select) {
+							qs.$select = additionalFields.select;
+						}
+
 						const responseData = await microsoftApiRequestAllItems.call(
 							this,
 							'value',
 							'GET',
 							endpoint,
+							{},
+							qs,
 						);
 						returnData.push(...responseData);
 					}
@@ -852,11 +860,19 @@ export class MicrosoftPlanner implements INodeType {
 							});
 						}
 
+						const additionalFields = this.getNodeParameter('additionalFields', i, {}) as IDataObject;
+						const qs: IDataObject = {};
+						if (additionalFields?.select) {
+							qs.$select = additionalFields.select;
+						}
+
 						const responseData = await microsoftApiRequestAllItems.call(
 							this,
 							'value',
 							'GET',
 							endpoint,
+							{},
+							qs,
 						);
 						returnData.push(...responseData);
 					}
@@ -1053,11 +1069,19 @@ export class MicrosoftPlanner implements INodeType {
 						const planId = this.getNodeParameter('planId', i) as string;
 						const endpoint = `/planner/plans/${planId}/buckets`;
 
+						const additionalFields = this.getNodeParameter('additionalFields', i) as IDataObject;
+						const qs: IDataObject = {};
+						if (additionalFields?.select) {
+							qs.$select = additionalFields.select;
+						}
+
 						const responseData = await microsoftApiRequestAllItems.call(
 							this,
 							'value',
 							'GET',
 							endpoint,
+							{},
+							qs,
 						);
 						returnData.push(...responseData);
 					}
@@ -1264,11 +1288,19 @@ export class MicrosoftPlanner implements INodeType {
 							const groupId = plan.container.containerId;
 							const threadId = task.conversationThreadId;
 
+							const additionalFields = this.getNodeParameter('additionalFields', i) as IDataObject;
+							const qs: IDataObject = {};
+							if (additionalFields?.select) {
+								qs.$select = additionalFields.select;
+							}
+
 							// Get all posts from the conversation thread
 							const posts = await microsoftApiRequest.call(
 								this,
 								'GET',
 								`/groups/${groupId}/threads/${threadId}/posts`,
+								{},
+								qs
 							);
 
 							const comments = posts.value.map((post: IDataObject) => ({

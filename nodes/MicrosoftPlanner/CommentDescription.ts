@@ -136,4 +136,26 @@ export const commentFields: INodeProperties[] = [
         ],
         description: 'The task to get comments from',
     },
+    {
+        displayName: 'Additional Fields',
+        name: 'additionalFields',
+        type: 'collection',
+        placeholder: 'Add Field',
+        default: {},
+        displayOptions: {
+            show: {
+                resource: ['comment'],
+                operation: ['getAll'],
+            },
+        },
+        options: [
+            {
+                displayName: 'Select Properties',
+                name: 'select',
+                type: 'string',
+                default: '',
+                description: 'Comma-separated list of properties to specify which fields to return (e.g. id,content)',
+            },
+        ],
+    },
 ];

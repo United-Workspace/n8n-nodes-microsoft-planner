@@ -532,6 +532,28 @@ export const taskFields: INodeProperties[] = [
 			},
 		],
 	},
+	{
+		displayName: 'Additional Fields',
+		name: 'additionalFields',
+		type: 'collection',
+		placeholder: 'Add Field',
+		default: {},
+		displayOptions: {
+			show: {
+				resource: ['task'],
+				operation: ['getAll'],
+			},
+		},
+		options: [
+			{
+				displayName: 'Select Properties',
+				name: 'select',
+				type: 'string',
+				default: '',
+				description: 'Comma-separated list of properties to specify which fields to return (e.g. id,title,percentComplete)',
+			},
+		],
+	},
 
 	// ----------------------------------
 	//         task:update

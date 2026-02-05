@@ -192,6 +192,28 @@ export const planFields: INodeProperties[] = [
 		description: 'The Microsoft 365 group ID whose plans to list (owner)',
 		placeholder: 'e.g. 6ff15978-94d4-414f-a497-295a245718bc',
 	},
+	{
+		displayName: 'Additional Fields',
+		name: 'additionalFields',
+		type: 'collection',
+		placeholder: 'Add Field',
+		default: {},
+		displayOptions: {
+			show: {
+				resource: ['plan'],
+				operation: ['getAll'],
+			},
+		},
+		options: [
+			{
+				displayName: 'Select Properties',
+				name: 'select',
+				type: 'string',
+				default: '',
+				description: 'Comma-separated list of properties to specify which fields to return (e.g. id,title)',
+			},
+		],
+	},
 
 	// ----------------------------------
 	//         plan:update
