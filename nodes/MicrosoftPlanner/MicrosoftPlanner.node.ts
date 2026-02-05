@@ -264,7 +264,11 @@ export class MicrosoftPlanner implements INodeType {
 						);
 
 						// Add description, references, or checklist if provided
-						if (additionalFields.description || additionalFields.references || additionalFields.checklist) {
+						if (
+							additionalFields.description ||
+							additionalFields.attachmentsUi ||
+							additionalFields.checklistUi
+						) {
 							const details = await microsoftApiRequest.call(
 								this,
 								'GET',
@@ -279,37 +283,102 @@ export class MicrosoftPlanner implements INodeType {
 								responseData.description = additionalFields.description;
 							}
 
-							if (additionalFields.references) {
-								const references = additionalFields.references as IDataObject;
-								const referenceList = references.reference as IDataObject[];
-								const referencesBody: IDataObject = {};
-								for (const reference of referenceList) {
-									const url = reference.url as string;
-									const alias = reference.alias as string;
-									const type = reference.type as string;
-									// Use helper to encode URL and handle special characters like dots
-									const encodedUrl = encodeReferenceKey(url);
-									referencesBody[encodedUrl] = {
-										'@odata.type': '#microsoft.graph.plannerExternalReference',
-										alias,
-										type,
-									};
+							// Handle Attachments (Manual or JSON)
+							const referencesBody: IDataObject = {};
+							const attachmentsUi = additionalFields.attachmentsUi as IDataObject;
+							if (attachmentsUi && attachmentsUi.attachments) {
+								const attachments = attachmentsUi.attachments as IDataObject;
+								const mode = attachments.mode as string;
+								if (mode === 'manual' && attachments.items) {
+									const items = attachments.items as IDataObject;
+									if (items && items.reference) {
+										const referenceList = items.reference as IDataObject[];
+										for (const reference of referenceList) {
+											const url = reference.url as string;
+											const alias = reference.alias as string;
+											const type = reference.type as string;
+											const encodedUrl = encodeReferenceKey(url);
+											referencesBody[encodedUrl] = {
+												'@odata.type': '#microsoft.graph.plannerExternalReference',
+												alias,
+												type,
+											};
+										}
+									}
+								} else if (mode === 'json' && attachments.json) {
+									const referencesJson = attachments.json;
+									let referenceList: any[];
+									try {
+										referenceList = typeof referencesJson === 'string'
+											? JSON.parse(referencesJson)
+											: referencesJson;
+										if (!Array.isArray(referenceList)) throw new Error('Not an array');
+									} catch (error) {
+										throw new NodeOperationError(this.getNode(), 'Invalid JSON in Attachments (JSON) field. It must be an array of objects.', { itemIndex: i });
+									}
+
+									for (const reference of referenceList) {
+										const url = reference.url;
+										if (!url) continue;
+										const encodedUrl = encodeReferenceKey(url);
+										referencesBody[encodedUrl] = {
+											'@odata.type': '#microsoft.graph.plannerExternalReference',
+											alias: reference.alias || '',
+											type: reference.type || 'Other',
+										};
+									}
 								}
+							}
+
+							if (Object.keys(referencesBody).length > 0) {
 								detailsBody.references = referencesBody;
 							}
 
-							if (additionalFields.checklist) {
-								const checklist = additionalFields.checklist as IDataObject;
-								const checklistList = checklist.item as IDataObject[];
-								const checklistBody: IDataObject = {};
-								for (const item of checklistList) {
-									const id = (item.id as string) || generateGuid();
-									checklistBody[id] = {
-										'@odata.type': '#microsoft.graph.plannerChecklistItem',
-										title: item.title,
-										isChecked: item.isChecked,
-									};
+							// Handle Checklist (Manual or JSON)
+							const checklistBody: IDataObject = {};
+							const checklistUi = additionalFields.checklistUi as IDataObject;
+							if (checklistUi && checklistUi.checklist) {
+								const checklist = checklistUi.checklist as IDataObject;
+								const mode = checklist.mode as string;
+								if (mode === 'manual' && checklist.items) {
+									const items = checklist.items as IDataObject;
+									if (items && items.item) {
+										const checklistList = items.item as IDataObject[];
+										for (const item of checklistList) {
+											const id = (item.id as string) || generateGuid();
+											checklistBody[id] = {
+												'@odata.type': '#microsoft.graph.plannerChecklistItem',
+												title: item.title,
+												isChecked: item.isChecked,
+											};
+										}
+									}
+								} else if (mode === 'json' && checklist.json) {
+									const checklistJson = checklist.json;
+									let checklistList: any[];
+									try {
+										checklistList = typeof checklistJson === 'string'
+											? JSON.parse(checklistJson)
+											: checklistJson;
+										if (!Array.isArray(checklistList)) throw new Error('Not an array');
+									} catch (error) {
+										throw new NodeOperationError(this.getNode(), 'Invalid JSON in Checklist (JSON) field. It must be an array of objects.', { itemIndex: i });
+									}
+
+									for (const item of checklistList) {
+										const title = item.title;
+										if (!title) continue;
+										const id = item.id || generateGuid();
+										checklistBody[id] = {
+											'@odata.type': '#microsoft.graph.plannerChecklistItem',
+											title,
+											isChecked: !!item.isChecked,
+										};
+									}
 								}
+							}
+
+							if (Object.keys(checklistBody).length > 0) {
 								detailsBody.checklist = checklistBody;
 							}
 
@@ -476,7 +545,11 @@ export class MicrosoftPlanner implements INodeType {
 						}
 
 						// Update description, references, or checklist if provided
-						if (updateFields.description || updateFields.references || updateFields.checklist || updateFields.replaceAllReferences || updateFields.replaceAllChecklistItems) {
+						if (
+							updateFields.description ||
+							updateFields.attachmentsUi ||
+							updateFields.checklistUi
+						) {
 							const details = await microsoftApiRequest.call(
 								this,
 								'GET',
@@ -492,29 +565,60 @@ export class MicrosoftPlanner implements INodeType {
 
 							const referencesBody: IDataObject = {};
 
-							// 1. If replaceAllReferences is true, set all existing references to null
-							if (updateFields.replaceAllReferences && details.references) {
+							// 1. If operationMode is 'replace', set all existing references to null
+							const attachmentsUiForReplace = updateFields.attachmentsUi as IDataObject;
+							const attachmentsForReplace = attachmentsUiForReplace?.attachments as IDataObject;
+							const attachmentsOperationMode = attachmentsForReplace?.operationMode as string;
+							if (attachmentsOperationMode === 'replace' && details.references) {
 								for (const key of Object.keys(details.references)) {
 									referencesBody[key] = null;
 								}
 							}
 
-							// 2. Add new/updated references
-							if (updateFields.references) {
-								const references = updateFields.references as IDataObject;
-								const referenceList = references.reference as IDataObject[];
+							// 2. Add new/updated references (Manual or JSON)
+							const attachmentsUi = updateFields.attachmentsUi as IDataObject;
+							if (attachmentsUi && attachmentsUi.attachments) {
+								const attachments = attachmentsUi.attachments as IDataObject;
+								const mode = attachments.mode as string;
+								if (mode === 'manual' && attachments.items) {
+									const items = attachments.items as IDataObject;
+									if (items && items.reference) {
+										const referenceList = items.reference as IDataObject[];
 
-								for (const reference of referenceList) {
-									const url = reference.url as string;
-									const alias = reference.alias as string;
-									const type = reference.type as string;
-									// Use helper to encode URL and handle special characters like dots
-									const encodedUrl = encodeReferenceKey(url);
-									referencesBody[encodedUrl] = {
-										'@odata.type': '#microsoft.graph.plannerExternalReference',
-										alias,
-										type,
-									};
+										for (const reference of referenceList) {
+											const url = reference.url as string;
+											const alias = reference.alias as string;
+											const type = reference.type as string;
+											const encodedUrl = encodeReferenceKey(url);
+											referencesBody[encodedUrl] = {
+												'@odata.type': '#microsoft.graph.plannerExternalReference',
+												alias,
+												type,
+											};
+										}
+									}
+								} else if (mode === 'json' && attachments.json) {
+									const referencesJson = attachments.json;
+									let referenceList: any[];
+									try {
+										referenceList = typeof referencesJson === 'string'
+											? JSON.parse(referencesJson)
+											: referencesJson;
+										if (!Array.isArray(referenceList)) throw new Error('Not an array');
+									} catch (error) {
+										throw new NodeOperationError(this.getNode(), 'Invalid JSON in Attachments (JSON) field. It must be an array of objects.', { itemIndex: i });
+									}
+
+									for (const reference of referenceList) {
+										const url = reference.url;
+										if (!url) continue;
+										const encodedUrl = encodeReferenceKey(url);
+										referencesBody[encodedUrl] = {
+											'@odata.type': '#microsoft.graph.plannerExternalReference',
+											alias: reference.alias || '',
+											type: reference.type || 'Other',
+										};
+									}
 								}
 							}
 
@@ -524,25 +628,57 @@ export class MicrosoftPlanner implements INodeType {
 
 							const checklistBody: IDataObject = {};
 
-							// 1. If replaceAllChecklistItems is true, set all existing checklist items to null
-							if (updateFields.replaceAllChecklistItems && details.checklist) {
+							// 1. If operationMode is 'replace', set all existing checklist items to null
+							const checklistUiForReplace = updateFields.checklistUi as IDataObject;
+							const checklistForReplace = checklistUiForReplace?.checklist as IDataObject;
+							const checklistOperationMode = checklistForReplace?.operationMode as string;
+							if (checklistOperationMode === 'replace' && details.checklist) {
 								for (const key of Object.keys(details.checklist)) {
 									checklistBody[key] = null;
 								}
 							}
 
-							// 2. Add new/updated checklist items
-							if (updateFields.checklist) {
-								const checklist = updateFields.checklist as IDataObject;
-								const checklistList = checklist.item as IDataObject[];
+							// 2. Add new/updated checklist items (Manual or JSON)
+							const checklistUi = updateFields.checklistUi as IDataObject;
+							if (checklistUi && checklistUi.checklist) {
+								const checklist = checklistUi.checklist as IDataObject;
+								const mode = checklist.mode as string;
+								if (mode === 'manual' && checklist.items) {
+									const items = checklist.items as IDataObject;
+									if (items && items.item) {
+										const checklistList = items.item as IDataObject[];
 
-								for (const item of checklistList) {
-									const id = (item.id as string) || generateGuid();
-									checklistBody[id] = {
-										'@odata.type': '#microsoft.graph.plannerChecklistItem',
-										title: item.title,
-										isChecked: item.isChecked,
-									};
+										for (const item of checklistList) {
+											const id = (item.id as string) || generateGuid();
+											checklistBody[id] = {
+												'@odata.type': '#microsoft.graph.plannerChecklistItem',
+												title: item.title,
+												isChecked: item.isChecked,
+											};
+										}
+									}
+								} else if (mode === 'json' && checklist.json) {
+									const checklistJson = checklist.json;
+									let checklistList: any[];
+									try {
+										checklistList = typeof checklistJson === 'string'
+											? JSON.parse(checklistJson)
+											: checklistJson;
+										if (!Array.isArray(checklistList)) throw new Error('Not an array');
+									} catch (error) {
+										throw new NodeOperationError(this.getNode(), 'Invalid JSON in Checklist (JSON) field. It must be an array of objects.', { itemIndex: i });
+									}
+
+									for (const item of checklistList) {
+										const title = item.title;
+										if (!title) continue;
+										const id = item.id || generateGuid();
+										checklistBody[id] = {
+											'@odata.type': '#microsoft.graph.plannerChecklistItem',
+											title,
+											isChecked: !!item.isChecked,
+										};
+									}
 								}
 							}
 
@@ -571,11 +707,11 @@ export class MicrosoftPlanner implements INodeType {
 						);
 
 						// If description (task details) was updated, also return latest details
-						if (Object.prototype.hasOwnProperty.call(updateFields, 'description') ||
-							Object.prototype.hasOwnProperty.call(updateFields, 'references') ||
-							Object.prototype.hasOwnProperty.call(updateFields, 'checklist') ||
-							Object.prototype.hasOwnProperty.call(updateFields, 'replaceAllReferences') ||
-							Object.prototype.hasOwnProperty.call(updateFields, 'replaceAllChecklistItems')) {
+						if (
+							Object.prototype.hasOwnProperty.call(updateFields, 'description') ||
+							Object.prototype.hasOwnProperty.call(updateFields, 'attachmentsUi') ||
+							Object.prototype.hasOwnProperty.call(updateFields, 'checklistUi')
+						) {
 							const details = await microsoftApiRequest.call(
 								this,
 								'GET',

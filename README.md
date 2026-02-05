@@ -283,6 +283,16 @@ Tested with n8n version 1.0.0 and above.
 
 ## Version History
 
+### 1.5.3
+- **UI Improvements for Attachments and Checklists**
+  - Refactored to use a grouped UI pattern for better usability
+  - Replaced separate fields with a unified structure using `fixedCollection`
+- **Updated Logic for Updates**
+  - Replaced "Replace All" toggle with a clearer **Operation Mode** dropdown (Append vs Replace)
+  - Renamed "Mode" to "Input Mode" for better clarity between Manual and JSON inputs
+  - Fixed logic for replacing items with matching IDs during updates
+
+
 ### 1.5.2
 - **Maintenance release**
 - Removed runtime dependency on `n8n-core` to comply with n8n community node requirements

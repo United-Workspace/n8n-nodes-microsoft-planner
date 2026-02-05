@@ -202,56 +202,111 @@ export const taskFields: INodeProperties[] = [
 			},
 			{
 				displayName: 'Attachments',
-				name: 'references',
+				name: 'attachmentsUi',
+				placeholder: 'Add Attachments',
 				type: 'fixedCollection',
-				default: {},
-				placeholder: 'Add Attachment',
 				typeOptions: {
-					multipleValues: true,
+					multipleValues: false,
+				},
+				default: {
+					attachments: {},
 				},
 				options: [
 					{
-						name: 'reference',
-						displayName: 'Attachment',
+						displayName: 'Attachments',
+						name: 'attachments',
 						values: [
 							{
-								displayName: 'URL',
-								name: 'url',
-								type: 'string',
-								default: '',
-								required: true,
-								description: 'The URL of the attachment',
-							},
-							{
-								displayName: 'Alias',
-								name: 'alias',
-								type: 'string',
-								default: '',
-								description: 'A friendly name for the attachment',
-							},
-							{
-								displayName: 'Type',
-								name: 'type',
+								displayName: 'Input Mode',
+								name: 'mode',
 								type: 'options',
 								options: [
 									{
-										name: 'Excel',
-										value: 'Excel',
+										name: 'Manual',
+										value: 'manual',
 									},
 									{
-										name: 'Other',
-										value: 'Other',
-									},
-									{
-										name: 'PowerPoint',
-										value: 'PowerPoint',
-									},
-									{
-										name: 'Word',
-										value: 'Word',
+										name: 'JSON',
+										value: 'json',
 									},
 								],
-								default: 'Other',
+								default: 'manual',
+								description: 'Choose how to provide attachments',
+							},
+							{
+								displayName: 'Items',
+								name: 'items',
+								type: 'fixedCollection',
+								default: {},
+								placeholder: 'Add Attachment',
+								displayOptions: {
+									show: {
+										mode: ['manual'],
+									},
+								},
+								typeOptions: {
+									multipleValues: true,
+								},
+								options: [
+									{
+										name: 'reference',
+										displayName: 'Attachment',
+										values: [
+											{
+												displayName: 'URL',
+												name: 'url',
+												type: 'string',
+												default: '',
+												required: true,
+												description: 'The URL of the attachment',
+											},
+											{
+												displayName: 'Alias',
+												name: 'alias',
+												type: 'string',
+												default: '',
+												description: 'A friendly name for the attachment',
+											},
+											{
+												displayName: 'Type',
+												name: 'type',
+												type: 'options',
+												options: [
+													{
+														name: 'Excel',
+														value: 'Excel',
+													},
+													{
+														name: 'Other',
+														value: 'Other',
+													},
+													{
+														name: 'PowerPoint',
+														value: 'PowerPoint',
+													},
+													{
+														name: 'Word',
+														value: 'Word',
+													},
+												],
+												default: 'Other',
+											},
+										],
+									},
+								],
+							},
+							{
+								displayName: 'JSON',
+								name: 'json',
+								type: 'string',
+								default: '',
+								placeholder: '[{"url": "https://example.com", "alias": "Example", "type": "Other"}]',
+								displayOptions: {
+									show: {
+										mode: ['json'],
+									},
+								},
+								description: 'Add attachments as a JSON array of objects with url, alias (optional), and type (optional) keys',
 							},
 						],
 					},
@@ -260,39 +315,94 @@ export const taskFields: INodeProperties[] = [
 			},
 			{
 				displayName: 'Checklist',
-				name: 'checklist',
+				name: 'checklistUi',
+				placeholder: 'Add Checklist',
 				type: 'fixedCollection',
-				default: {},
-				placeholder: 'Add Checklist Item',
 				typeOptions: {
-					multipleValues: true,
+					multipleValues: false,
+				},
+				default: {
+					checklist: {},
 				},
 				options: [
 					{
-						name: 'item',
-						displayName: 'Checklist Item',
+						displayName: 'Checklist',
+						name: 'checklist',
 						values: [
 							{
-								displayName: 'ID',
-								name: 'id',
-								type: 'string',
-								default: '',
-								description: 'ID of the checklist item. Leave empty to generate a new ID.',
+								displayName: 'Input Mode',
+								name: 'mode',
+								type: 'options',
+								options: [
+									{
+										name: 'Manual',
+										value: 'manual',
+									},
+									{
+										name: 'JSON',
+										value: 'json',
+									},
+								],
+								default: 'manual',
+								description: 'Choose how to provide checklist items',
 							},
 							{
-								displayName: 'Title',
-								name: 'title',
-								type: 'string',
-								default: '',
-								required: true,
-								description: 'The title of the checklist item',
+								displayName: 'Items',
+								name: 'items',
+								type: 'fixedCollection',
+								default: {},
+								placeholder: 'Add Checklist Item',
+								displayOptions: {
+									show: {
+										mode: ['manual'],
+									},
+								},
+								typeOptions: {
+									multipleValues: true,
+								},
+								options: [
+									{
+										name: 'item',
+										displayName: 'Checklist Item',
+										values: [
+											{
+												displayName: 'ID',
+												name: 'id',
+												type: 'string',
+												default: '',
+												description: 'ID of the checklist item. Leave empty to generate a new ID.',
+											},
+											{
+												displayName: 'Title',
+												name: 'title',
+												type: 'string',
+												default: '',
+												required: true,
+												description: 'The title of the checklist item',
+											},
+											{
+												displayName: 'Is Checked',
+												name: 'isChecked',
+												type: 'boolean',
+												default: false,
+												description: 'Whether the item is checked',
+											},
+										],
+									},
+								],
 							},
 							{
-								displayName: 'Is Checked',
-								name: 'isChecked',
-								type: 'boolean',
-								default: false,
-								description: 'Whether the item is checked',
+								displayName: 'JSON',
+								name: 'json',
+								type: 'string',
+								default: '',
+								placeholder: '[{"title": "My Item", "isChecked": false}]',
+								displayOptions: {
+									show: {
+										mode: ['json'],
+									},
+								},
+								description: 'Add checklist items as a JSON array of objects with title and isChecked (optional) keys',
 							},
 						],
 					},
@@ -519,56 +629,130 @@ export const taskFields: INodeProperties[] = [
 			},
 			{
 				displayName: 'Attachments',
-				name: 'references',
+				name: 'attachmentsUi',
+				placeholder: 'Add Attachments',
 				type: 'fixedCollection',
-				default: {},
-				placeholder: 'Add Attachment',
 				typeOptions: {
-					multipleValues: true,
+					multipleValues: false,
+				},
+				default: {
+					attachments: {},
 				},
 				options: [
 					{
-						name: 'reference',
-						displayName: 'Attachment',
+						displayName: 'Attachments',
+						name: 'attachments',
 						values: [
 							{
-								displayName: 'URL',
-								name: 'url',
-								type: 'string',
-								default: '',
-								required: true,
-								description: 'The URL of the attachment',
-							},
-							{
-								displayName: 'Alias',
-								name: 'alias',
-								type: 'string',
-								default: '',
-								description: 'A friendly name for the attachment',
-							},
-							{
-								displayName: 'Type',
-								name: 'type',
+								displayName: 'Input Mode',
+								name: 'mode',
 								type: 'options',
 								options: [
 									{
-										name: 'Excel',
-										value: 'Excel',
+										name: 'Manual',
+										value: 'manual',
 									},
 									{
-										name: 'Other',
-										value: 'Other',
-									},
-									{
-										name: 'PowerPoint',
-										value: 'PowerPoint',
-									},
-									{
-										name: 'Word',
-										value: 'Word',
+										name: 'JSON',
+										value: 'json',
 									},
 								],
-								default: 'Other',
+								default: 'manual',
+								description: 'Choose how to provide attachments',
+							},
+							{
+								displayName: 'Items',
+								name: 'items',
+								type: 'fixedCollection',
+								default: {},
+								placeholder: 'Add Attachment',
+								displayOptions: {
+									show: {
+										mode: ['manual'],
+									},
+								},
+								typeOptions: {
+									multipleValues: true,
+								},
+								options: [
+									{
+										name: 'reference',
+										displayName: 'Attachment',
+										values: [
+											{
+												displayName: 'URL',
+												name: 'url',
+												type: 'string',
+												default: '',
+												required: true,
+												description: 'The URL of the attachment',
+											},
+											{
+												displayName: 'Alias',
+												name: 'alias',
+												type: 'string',
+												default: '',
+												description: 'A friendly name for the attachment',
+											},
+											{
+												displayName: 'Type',
+												name: 'type',
+												type: 'options',
+												options: [
+													{
+														name: 'Excel',
+														value: 'Excel',
+													},
+													{
+														name: 'Other',
+														value: 'Other',
+													},
+													{
+														name: 'PowerPoint',
+														value: 'PowerPoint',
+													},
+													{
+														name: 'Word',
+														value: 'Word',
+													},
+												],
+												default: 'Other',
+											},
+										],
+									},
+								],
+							},
+							{
+								displayName: 'JSON',
+								name: 'json',
+								type: 'string',
+								default: '',
+								placeholder: '[{"url": "https://example.com", "alias": "Example", "type": "Other"}]',
+								displayOptions: {
+									show: {
+										mode: ['json'],
+									},
+								},
+								description: 'Add attachments as a JSON array of objects with url, alias (optional), and type (optional) keys',
+							},
+							{
+								displayName: 'Operation Mode',
+								name: 'operationMode',
+								type: 'options',
+								options: [
+									{
+										name: 'Append',
+										value: 'append',
+										description: 'Appends the new given attachment items to the existing ones, potentially updating existing ones with matching ids',
+									},
+									{
+										name: 'Replace',
+										value: 'replace',
+										description: 'Sets the given attachment items and replaces potentially existing ones',
+									},
+								],
+								default: 'append',
+								description: 'Choose how to update the attachments',
 							},
 						],
 					},
@@ -576,59 +760,119 @@ export const taskFields: INodeProperties[] = [
 				description: 'Add attachments to the task',
 			},
 			{
-				displayName: 'Replace All Attachments',
-				name: 'replaceAllReferences',
-				type: 'boolean',
-				default: false,
-				description: 'Whether to remove all existing attachments before adding the new ones. If true, the new list will replace the old one entirely.',
-			},
-			{
 				displayName: 'Checklist',
-				name: 'checklist',
+				name: 'checklistUi',
+				placeholder: 'Add Checklist',
 				type: 'fixedCollection',
-				default: {},
-				placeholder: 'Add Checklist Item',
 				typeOptions: {
-					multipleValues: true,
+					multipleValues: false,
+				},
+				default: {
+					checklist: {},
 				},
 				options: [
 					{
-						name: 'item',
-						displayName: 'Checklist Item',
+						displayName: 'Checklist',
+						name: 'checklist',
 						values: [
 							{
-								displayName: 'ID',
-								name: 'id',
-								type: 'string',
-								default: '',
-								description: 'ID of the checklist item. Leave empty to generate a new ID.',
+								displayName: 'Input Mode',
+								name: 'mode',
+								type: 'options',
+								options: [
+									{
+										name: 'Manual',
+										value: 'manual',
+									},
+									{
+										name: 'JSON',
+										value: 'json',
+									},
+								],
+								default: 'manual',
+								description: 'Choose how to provide checklist items',
 							},
 							{
-								displayName: 'Title',
-								name: 'title',
-								type: 'string',
-								default: '',
-								required: true,
-								description: 'The title of the checklist item',
+								displayName: 'Items',
+								name: 'items',
+								type: 'fixedCollection',
+								default: {},
+								placeholder: 'Add Checklist Item',
+								displayOptions: {
+									show: {
+										mode: ['manual'],
+									},
+								},
+								typeOptions: {
+									multipleValues: true,
+								},
+								options: [
+									{
+										name: 'item',
+										displayName: 'Checklist Item',
+										values: [
+											{
+												displayName: 'ID',
+												name: 'id',
+												type: 'string',
+												default: '',
+												description: 'ID of the checklist item. Leave empty to generate a new ID.',
+											},
+											{
+												displayName: 'Title',
+												name: 'title',
+												type: 'string',
+												default: '',
+												required: true,
+												description: 'The title of the checklist item',
+											},
+											{
+												displayName: 'Is Checked',
+												name: 'isChecked',
+												type: 'boolean',
+												default: false,
+												description: 'Whether the item is checked',
+											},
+										],
+									},
+								],
 							},
 							{
-								displayName: 'Is Checked',
-								name: 'isChecked',
-								type: 'boolean',
-								default: false,
-								description: 'Whether the item is checked',
+								displayName: 'JSON',
+								name: 'json',
+								type: 'string',
+								default: '',
+								placeholder: '[{"title": "My Item", "isChecked": false}]',
+								displayOptions: {
+									show: {
+										mode: ['json'],
+									},
+								},
+								description: 'Add checklist items as a JSON array of objects with title and isChecked (optional) keys',
+							},
+							{
+								displayName: 'Operation Mode',
+								name: 'operationMode',
+								type: 'options',
+								options: [
+									{
+										name: 'Append',
+										value: 'append',
+										description: 'Appends the new given checklist items to the existing ones, potentially updating existing ones with matching ids',
+									},
+									{
+										name: 'Replace',
+										value: 'replace',
+										description: 'Sets the given checklist items and replaces potentially existing ones',
+									},
+								],
+								default: 'append',
+								description: 'Choose how to update the checklist',
 							},
 						],
 					},
 				],
 				description: 'Add checklist items to the task',
-			},
-			{
-				displayName: 'Replace All Checklist Items',
-				name: 'replaceAllChecklistItems',
-				type: 'boolean',
-				default: false,
-				description: 'Whether to remove all existing checklist items before adding/updating the list.',
 			},
 		],
 	},
