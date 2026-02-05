@@ -241,14 +241,12 @@ export class MicrosoftPlanner implements INodeType {
 
 						// Handle assignments
 						if (additionalFields.assignments) {
-							const emails = parseAssignments(additionalFields.assignments as string);
+							const emails = parseAssignments(additionalFields.assignments as string | string[]);
 							const userIds: string[] = [];
 
 							for (const email of emails) {
 								const userId = await getUserIdByEmail.call(this, email);
-								if (userId) {
-									userIds.push(userId);
-								}
+								userIds.push(userId);
 							}
 
 							if (userIds.length > 0) {
@@ -522,14 +520,12 @@ export class MicrosoftPlanner implements INodeType {
 
 						// Handle assignments
 						if (updateFields.assignments) {
-							const emails = parseAssignments(updateFields.assignments as string);
+							const emails = parseAssignments(updateFields.assignments as string | string[]);
 							const userIds: string[] = [];
 
 							for (const email of emails) {
 								const userId = await getUserIdByEmail.call(this, email);
-								if (userId) {
-									userIds.push(userId);
-								}
+								userIds.push(userId);
 							}
 
 							if (userIds.length > 0) {

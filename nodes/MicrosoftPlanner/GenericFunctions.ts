@@ -6,6 +6,7 @@ import {
 	IHttpRequestOptions,
 	ILoadOptionsFunctions,
 	NodeApiError,
+	NodeOperationError,
 } from 'n8n-workflow';
 
 export async function microsoftApiRequest(
@@ -98,24 +99,52 @@ export function formatDateTime(dateTime: string | undefined): string | undefined
 export async function getUserIdByEmail(
 	this: IHookFunctions | IExecuteFunctions | ILoadOptionsFunctions,
 	email: string,
-): Promise<string | null> {
+): Promise<string> {
+	// 1. Check if it's already a UUID
+	if (/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(email)) {
+		return email;
+	}
+
 	try {
+		// 2. Try direct lookup (fastest)
 		const response = await microsoftApiRequest.call(
 			this,
 			'GET',
 			`/users/${encodeURIComponent(email)}`,
+			{},
+			{ $select: 'id' }
 		);
 		return response.id;
 	} catch (error: any) {
-		return null;
+		// 3. Try filter lookup (handling UPN mismatch or restricted visibility)
+		try {
+			const users = await microsoftApiRequestAllItems.call(
+				this,
+				'value',
+				'GET',
+				'/users',
+				{},
+				{ $filter: `mail eq '${email}' or userPrincipalName eq '${email}'`, $select: 'id' }
+			);
+			if (users && users.length > 0) {
+				return users[0].id;
+			}
+		} catch (filterError) {
+			// Ignore filter error, throw original or new error
+		}
+
+		throw new NodeOperationError(this.getNode(), `Could not find user with email/ID: ${email}`);
 	}
 }
 
-export function parseAssignments(assignmentsString: string): string[] {
-	if (!assignmentsString || assignmentsString.trim() === '') {
+export function parseAssignments(assignments: string | string[]): string[] {
+	if (Array.isArray(assignments)) {
+		return assignments;
+	}
+	if (!assignments || assignments.trim() === '') {
 		return [];
 	}
-	return assignmentsString
+	return assignments
 		.split(',')
 		.map((email) => email.trim())
 		.filter((email) => email.length > 0);

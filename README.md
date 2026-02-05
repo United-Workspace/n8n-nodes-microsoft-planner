@@ -283,6 +283,15 @@ Tested with n8n version 1.0.0 and above.
 
 ## Version History
 
+### 1.5.4
+- **New Feature: $select Support**
+  - Added "Select Properties" field to "Get Many" operations for Tasks, Plans, Buckets, and Comments.
+- **Improved Task Assignments**
+  - Fixed silent failures for task assignments.
+  - Added robust user lookup (ID, Email, UPN) and error reporting for missing users.
+  - Added support for Array inputs (expressions) in the "Assigned To" field.
+
+
 ### 1.5.3
 - **UI Improvements for Attachments and Checklists**
   - Refactored to use a grouped UI pattern for better usability
