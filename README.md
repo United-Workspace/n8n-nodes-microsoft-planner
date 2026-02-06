@@ -283,6 +283,11 @@ Tested with n8n version 1.0.0 and above.
 
 ## Version History
 
+### 1.5.5
+- **Bug Fix: $select Duplication**
+  - Fixed an issue where the `$select` query parameter was sent twice during pagination, causing "Query option '$select' was specified more than once" error.
+
+
 ### 1.5.4
 - **New Feature: $select Support**
   - Added "Select Properties" field to "Get Many" operations for Tasks, Plans, Buckets, and Comments.
